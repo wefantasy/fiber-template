@@ -1,0 +1,229 @@
+basePath: /api/v1
+definitions:
+  input.UserLogin:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  input.UserRegister:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  model.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        description: 编号
+        type: integer
+      password:
+        description: 用户密码
+        type: string
+      updatedAt:
+        type: string
+      username:
+        description: 用户账户
+        type: string
+    type: object
+info:
+  contact:
+    name: Fantasy
+    url: https://github.com/wefantasy/fiber-template
+  description: app 的接口文档
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://github.com/wefantasy/fiber-template
+  title: app api
+  version: "1.0"
+paths:
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: 登录
+      parameters:
+      - description: 登录信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/input.UserLogin'
+      produces:
+      - application/json
+      responses: {}
+      summary: 登录
+      tags:
+      - common
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: 测试
+      produces:
+      - application/json
+      responses: {}
+      summary: 测试
+      tags:
+      - common
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: 注册
+      parameters:
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/input.UserRegister'
+      produces:
+      - application/json
+      responses: {}
+      summary: 注册
+      tags:
+      - common
+  /user:
+    get:
+      consumes:
+      - application/json
+      description: 查找用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 用户账户
+        in: query
+        name: username
+        type: string
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: 新增用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: 更新用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 用户信息
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.User'
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+  /user/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 删除用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 用户的 id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+    get:
+      consumes:
+      - application/json
+      description: 按id查找用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 用户的 id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+  /user/pagination/{size}/{page}:
+    get:
+      consumes:
+      - application/json
+      description: 分页查找用户
+      parameters:
+      - default: Bearer xxxx
+        description: Authentication header
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: 分页大小
+        in: path
+        name: size
+        required: true
+        type: integer
+      - description: 查询页号
+        in: path
+        name: page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses: {}
+      tags:
+      - user
+swagger: "2.0"

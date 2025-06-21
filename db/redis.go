@@ -11,8 +11,6 @@ import (
 	"time"
 )
 
-var RDB *RedisDB
-
 func InitializeRedis() {
 	if !conf.Redis.Enable {
 		log.Info("Redis dont Enable")

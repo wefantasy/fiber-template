@@ -13,6 +13,16 @@ func init() {
 	log.Initialize()
 }
 
+func TestMigrateSqlite(t *testing.T) {
+	InitializeSqlite()
+	MigrateSqlite()
+}
+
+func TestMigrateMysql(t *testing.T) {
+	InitializeMysql()
+	MigrateMysql()
+}
+
 func Test_Redis(t *testing.T) {
 	InitializeRedis()
 	RDB.Set(context.Background(), "test1", "value1", time.Second*30)

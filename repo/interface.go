@@ -7,7 +7,6 @@ import (
 )
 
 type BaseRepo interface {
-	Migrate() error
 }
 
 type UserRepo interface {
@@ -19,5 +18,4 @@ type UserRepo interface {
 	SelectByUsername(*fiber.Ctx, string) (*model.User, error)
 	SelectWithPagination(*fiber.Ctx, *model.Pagination) error
 	SelectTotalCount(*fiber.Ctx) (int, error)
-	Migrate() error
 }

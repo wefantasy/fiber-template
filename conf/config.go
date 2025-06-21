@@ -147,7 +147,7 @@ func NewDefaultConfig() *Config {
 		Expire: 3600,
 	}
 	mysql := MysqlConf{
-		DSN: "user:pass@tcp(127.0.0.1:3306)/templateDb?charset=utf8mb4&parseTime=true",
+		DSN: "user:pass@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true",
 	}
 
 	sqlite := SqliteConf{

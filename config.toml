@@ -12,7 +12,7 @@ secret = "FiberTemplate"
 dbType = "sqlite"
 
 [mysql]
-dsn = "root:password@tcp(127.0.0.1:3306)/templateDb?charset=utf8mb4&parseTime=true"
+dsn = "root:password@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true"
 
 [sqlite]
 path = "app.db"

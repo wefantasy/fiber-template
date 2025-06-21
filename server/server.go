@@ -36,9 +36,7 @@ func NewServer() (*Server, error) {
 	userRepo := repo.NewUserRepo()
 	repos := []repo.BaseRepo{userRepo}
 	if conf.Server.EnableMigrate {
-		for _, repo := range repos {
-			repo.Migrate()
-		}
+		db.Migrate()
 	}
 
 	// 初始化服务

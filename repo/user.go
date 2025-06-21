@@ -21,10 +21,6 @@ func NewUserRepo() UserRepo {
 	return &userRepo{}
 }
 
-func (o *userRepo) Migrate() error {
-	return nil
-}
-
 func (o *userRepo) Insert(c *fiber.Ctx, user *model.User) error {
 	sql := fmt.Sprintf("INSERT INTO user(%s) VALUES (%s)",
 		dbutil.NewBuilder(user).OnlyNonZero().BuildColumns(", "),

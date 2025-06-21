@@ -1,7 +1,5 @@
 package model
 
-import "embed"
-
 type Pagination struct {
 	Size   int         `json:"size" uri:"size" db:"size"`
 	Page   int         `json:"page" uri:"page"`                 // 页码，从1开始
@@ -26,6 +24,3 @@ func (o *Pagination) Format() {
 	}
 	o.Offset = (o.Page - 1) * o.Size
 }
-
-//go:embed *.sql
-var SqlFS embed.FS

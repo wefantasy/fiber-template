@@ -36,19 +36,18 @@ func GetProxyTransportFromApi() (*http.Transport, error) {
 	header := make(map[string]string)
 	header["X-API-Secret"] = conf.Base.ProxySecret
 
-	emptyTransport := &http.Transport{}
 	if conf.Base.ProxyApi == "" {
-		return emptyTransport, fmt.Errorf("proxy server is empty")
+		return nil, fmt.Errorf("proxy server is empty")
 	}
 	respBody, err := Request(http.MethodGet, conf.Base.ProxyApi, "", header, nil)
 	if err != nil {
-		return emptyTransport, err
+		return nil, err
 	}
 
 	protocol, err := util.JsonIndex(respBody,
 		"data.protocol")
 	if err != nil {
-		return emptyTransport, err
+		return nil, err
 	}
 	ip, _ := util.JsonIndex(respBody,
 		"data.ip")
@@ -69,11 +68,10 @@ func GetProxyTransportFromApi() (*http.Transport, error) {
 //	*http.Transport: 解析成功则返回配置好的 Transport 实例，失败则返回默认的空 Transport
 //	error: 如果解析代理地址失败，则返回错误
 func GetTransportWithUrl(proxy string) (*http.Transport, error) {
-	emptyTransport := &http.Transport{}
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
 		log.Debug("proxy format failed: ", err)
-		return emptyTransport, err
+		return nil, err
 	}
 
 	transport := &http.Transport{
@@ -84,7 +82,13 @@ func GetTransportWithUrl(proxy string) (*http.Transport, error) {
 		transport.Proxy = nil
 		dialer := socks.Dial(proxyURL.String())
 		transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+			log.Infof("Dialing to %s through SOCKS proxy %s", addr, proxyURL.Host)
 			return dialer(network, addr)
+		}
+	} else {
+		transport.Proxy = func(req *http.Request) (*url.URL, error) {
+			log.Infof("Dialing through HTTP proxy %s", proxyURL.Host)
+			return proxyURL, nil
 		}
 	}
 

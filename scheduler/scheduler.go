@@ -21,18 +21,19 @@ func Initialize() {
 		loc, _ := time.LoadLocation("Asia/Shanghai")
 		l := &loggerAdapter{}
 		c := cron.New(cron.WithLogger(l), cron.WithChain(cron.Recover(l)), cron.WithSeconds(), cron.WithLocation(loc))
-		TestTask()
-		_, err := c.AddFunc("0 * * * * *", TestTask)
+		everySecondMinuteTasks := []Task{
+			&ExampleTask{},
+		}
+		RunTaskSimple(everySecondMinuteTasks)
+		_, err := c.AddFunc("* * * * * *", func() {
+			RunTask(everySecondMinuteTasks)
+		})
 		if err != nil {
 			log.Error(err)
 			return
 		}
 		c.Start()
 	}()
-}
-
-func TestTask() {
-	log.Info(time.Now().Format("2006-01-02 15:04:05"))
 }
 
 type loggerAdapter struct{}

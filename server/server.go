@@ -8,6 +8,7 @@ import (
 	"app/i18n"
 	"app/log"
 	"app/middleware"
+	"app/scheduler"
 	"context"
 	"os"
 	"os/signal"
@@ -30,7 +31,7 @@ func NewServer() (*Server, error) {
 	log.Initialize()
 	db.Initialize()
 	i18n.Initialize()
-	//scheduler.Initialize()
+	scheduler.Initialize()
 
 	// 初始化数据库
 	userRepo := repo.NewUserRepo()

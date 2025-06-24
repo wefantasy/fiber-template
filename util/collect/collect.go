@@ -63,3 +63,15 @@ func FilterByStruct[T, F any](slice []T, filter F) []T {
 	}
 	return filtered
 }
+
+// Map 是一个通用的、支持泛型的函数
+// T 是输入类型，U 是输出类型
+// 它接收一个 T 类型的切片和一个转换函数 f(T) -> U
+// 返回一个 U 类型的切片
+func Map[T, U any](collection []T, iteratee func(T) U) []U {
+	result := make([]U, 0, len(collection))
+	for _, item := range collection {
+		result = append(result, iteratee(item))
+	}
+	return result
+}

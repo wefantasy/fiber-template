@@ -10,8 +10,8 @@ import (
 )
 
 func Initialize() {
-	encoder := zapcore.NewJSONEncoder(getEncoder())
-	//encoder := zapcore.NewConsoleEncoder(getEncoder())
+	//encoder := zapcore.NewJSONEncoder(getEncoder())
+	encoder := zapcore.NewConsoleEncoder(getEncoder())
 
 	logHook1 := getWriter()
 	logHook2 := os.Stdout

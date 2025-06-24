@@ -14,16 +14,34 @@ import (
 	"time"
 )
 
-func ExecRequestWithProxy(method, url string, body string, header map[string]string) (string, error) {
-	transport, err := GetProxyTransportFromApi()
-	if err != nil {
-		return "", err
+// ExecRequestWithProxy 用于执行带有代理的 HTTP 请求。
+// method: HTTP 请求方法（GET、POST 等）
+// url: 请求的 URL
+// body: 请求体，可以是字符串或结构体
+// header: 请求头
+// retry: 重试次数
+//
+// 返回值:
+//
+//	string: 响应体
+//	error: 如果请求失败，则返回错误
+func ExecRequestWithProxy(method, url string, body any, header map[string]string, retry int) (string, error) {
+	for i := 0; i < retry; i++ {
+		log.Infof("Request with proxy, retry %d", i)
+		transport, err := GetProxyTransportFromApi()
+		if err != nil {
+			continue
+		}
+		resp, err := RequestBase(method, url, body, header, transport, 15*time.Second)
+		if err != nil {
+			if IsStatusFailed(err) {
+				return "", err
+			}
+			continue
+		}
+		return resp, nil
 	}
-	body, err = Request(method, url, body, header, transport)
-	if err != nil {
-		return "", err
-	}
-	return body, nil
+	return "", fmt.Errorf("request with proxy failed after %d retries", retry)
 }
 
 // GetProxyTransportFromApi 用于从 API 获取一个代理的 Transport。
@@ -110,6 +128,8 @@ func CheckProxyAvailability(proxy string) string {
 	return CheckProxyAvailabilityWithTestUrl(proxy, "https://httpbin.org/get")
 }
 
+// CheckProxyAvailabilityWithTestUrl 用于测试一个代理地址的可用性。
+// 通过proxy访问testUrl来测试可用性，它首先尝试直接通过代理请求测试地址，如果失败，则会禁用证书校验后重试。
 func CheckProxyAvailabilityWithTestUrl(proxy, testUrl string) string {
 	log.Info("开始验证代理: ", proxy)
 

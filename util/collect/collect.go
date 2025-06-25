@@ -21,6 +21,12 @@ func Filter[T any](slice []T, f func(T) bool) []T {
 	return result
 }
 
+func Contains[T any](slice []T, f func(T) bool) bool {
+	var result []T
+	result = Filter(slice, f)
+	return len(result) > 0
+}
+
 // FilterByStruct 根据给定的结构体过滤切片中的元素
 // 参数:
 //

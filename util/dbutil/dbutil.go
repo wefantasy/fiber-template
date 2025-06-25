@@ -68,7 +68,7 @@ func parseStruct(v reflect.Value) []columnInfo {
 }
 
 // deReference 辅助函数，获取指针指向的实际 Value
-func deReference(o interface{}) reflect.Value {
+func deReference(o any) reflect.Value {
 	v := reflect.ValueOf(o)
 	for v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -87,7 +87,7 @@ type Builder struct {
 }
 
 // NewBuilder 创建一个新的构建器实例
-func NewBuilder(o interface{}) *Builder {
+func NewBuilder(o any) *Builder {
 	// 如果传入 nil，我们创建一个空的 builder，它仍然可以处理自定义子句
 	if o == nil {
 		return &Builder{}

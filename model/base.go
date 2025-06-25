@@ -1,12 +1,12 @@
 package model
 
 type Pagination struct {
-	Size   int         `json:"size" uri:"size" db:"size"`
-	Page   int         `json:"page" uri:"page"`                 // 页码，从1开始
-	Offset int         `json:"offset" uri:"offset" db:"offset"` // 偏移量，从0开始
-	Data   interface{} `json:"data"`                            // 数据
-	Total  int         `json:"total"`                           // 总记录数
-	Pages  int         `json:"pages"`                           // 总页数
+	Size   int `json:"size" uri:"size" db:"size"`
+	Page   int `json:"page" uri:"page"`                 // 页码，从1开始
+	Offset int `json:"offset" uri:"offset" db:"offset"` // 偏移量，从0开始
+	Data   any `json:"data"`                            // 数据
+	Total  int `json:"total"`                           // 总记录数
+	Pages  int `json:"pages"`                           // 总页数
 }
 
 func (o *Pagination) Format() {

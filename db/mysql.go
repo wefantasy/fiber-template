@@ -15,7 +15,7 @@ import (
 )
 
 func InitializeMysql() {
-	if !strings.Contains(conf.Server.DBType, "mysql") {
+	if !strings.Contains(conf.DB.Type, "mysql") {
 		log.Info("Mysql dont Enable")
 		return
 	}
@@ -23,7 +23,7 @@ func InitializeMysql() {
 	sql.Register(driverName, sqlhooks.Wrap(&mysql.MySQLDriver{}, &Hooks{}))
 
 	// 不存在则创建
-	dbCgf, err := mysql.ParseDSN(conf.Mysql.DSN)
+	dbCgf, err := mysql.ParseDSN(conf.DB.DSN)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -41,7 +41,7 @@ func InitializeMysql() {
 	}
 	defer initDb.Close()
 
-	db := getDBConnection(driverName, conf.Mysql.DSN)
+	db := getDBConnection(driverName, conf.DB.DSN)
 	err = db.Ping()
 	if err != nil {
 		log.Panic(err)
@@ -52,7 +52,7 @@ func InitializeMysql() {
 }
 
 func MigrateMysql() {
-	if !strings.Contains(conf.Server.DBType, "mysql") {
+	if !strings.Contains(conf.DB.Type, "mysql") {
 		return
 	}
 

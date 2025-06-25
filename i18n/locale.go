@@ -19,7 +19,7 @@ var Bundle *i18n.Bundle
 var Languages []language.Tag
 
 func Initialize() {
-	for _, lang := range conf.Base.Languages {
+	for _, lang := range conf.Languages {
 		l, err := language.Parse(lang)
 		if err != nil {
 			log.Panic(err)
@@ -59,7 +59,7 @@ func LocalizeWithLang(lang language.Tag, id string) string {
 		ID: id,
 	})
 	if err != nil {
-		log.Warn(err)
+		log.Debug(err)
 		return ""
 	}
 	return msg

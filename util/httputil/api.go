@@ -11,12 +11,12 @@ import (
 )
 
 type Response struct {
-	RequestId string      `json:"requestId" ` // 请求ID
-	Msg       string      `json:"msg" `       // success或错误信息
-	Data      interface{} `json:"data" `      // 返回数据
+	RequestId string `json:"requestId" ` // 请求ID
+	Msg       string `json:"msg" `       // success或错误信息
+	Data      any    `json:"data" `      // 返回数据
 }
 
-func JsonSuccess(c *fiber.Ctx, data interface{}) error {
+func JsonSuccess(c *fiber.Ctx, data any) error {
 	response := Response{}
 	strings.TrimSpace(GetRequestId(c))
 	response.RequestId = strings.TrimSpace(GetRequestId(c))

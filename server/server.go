@@ -52,8 +52,8 @@ func NewServer() (*Server, error) {
 
 	// 初始化Fiber
 	app := fiber.New(fiber.Config{
-		ServerHeader: conf.Base.AppName,
-		AppName:      conf.Base.AppName,
+		ServerHeader: conf.AppName,
+		AppName:      conf.AppName,
 	})
 	app.Use(middleware.Recover())
 	app.Use(middleware.RequestId())

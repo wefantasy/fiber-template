@@ -34,7 +34,7 @@ func GenerateJwt(username string) (string, error) {
 		"exp":      jwt.NewNumericDate(now.Add(JwtExpireTime)),
 		"iat":      jwt.NewNumericDate(now),
 		"nbf":      jwt.NewNumericDate(now),
-		"iss":      conf.Base.AppName,
+		"iss":      conf.AppName,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(conf.Server.Secret))

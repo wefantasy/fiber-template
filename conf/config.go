@@ -7,34 +7,34 @@ import (
 	"go.uber.org/zap/zapcore"
 	"os"
 	"path"
-	"path/filepath"
+	"strings"
 )
 
 var (
-	Conf   *Config
-	Base   BaseConf
-	Server ServerConf
-	Logger LoggerConf
-	Redis  RedisConf
-	Mysql  MysqlConf
-	Sqlite SqliteConf
+	AppName    string
+	RootPath   string
+	Languages  []string
+	Goroutines int
+	Conf       *Config
+	Server     ServerConf
+	Logger     LoggerConf
+	Scheduler  SchedulerConf
+	Redis      RedisConf
+	DB         DBConf
+	Proxy      ProxyConf
 )
 
 type Config struct {
-	Base   BaseConf   `toml:"base"`
-	Server ServerConf `toml:"server"`
-	Logger LoggerConf `toml:"logger"`
-	Redis  RedisConf  `toml:"redis"`
-	Mysql  MysqlConf  `toml:"mysql"`
-	Sqlite SqliteConf `toml:"sqlite"`
-}
-
-type BaseConf struct {
-	AppName     string   `toml:"appName"`     // 应用名称
-	RootPath    string   `toml:"rootPath"`    // 应用根目录
-	Languages   []string `toml:"languages"`   // 支持的语言
-	ProxyApi    string   `toml:"proxyApi"`    // 代理服务地址API
-	ProxySecret string   `toml:"proxySecret"` // 代理密钥
+	AppName    string        `toml:"appName"`    // 应用名称
+	RootPath   string        `toml:"rootPath"`   // 应用根目录
+	Languages  []string      `toml:"languages"`  // 支持的语言
+	Goroutines int           `toml:"goroutines"` // 默认协程数量
+	Server     ServerConf    `toml:"server"`
+	Logger     LoggerConf    `toml:"logger"`
+	Scheduler  SchedulerConf `toml:"scheduler"`
+	DB         DBConf        `toml:"db"`
+	Redis      RedisConf     `toml:"redis"`
+	Proxy      ProxyConf     `toml:"proxy"`
 }
 
 type ServerConf struct {
@@ -42,11 +42,10 @@ type ServerConf struct {
 	Port          string `toml:"port"`          // 监听端口
 	EnableMigrate bool   `toml:"enableMigrate"` // 是否启用数据库迁移
 	Secret        string `toml:"secret"`        // jwt密钥/Secret模式密钥
-	DBType        string `toml:"dbType"`        // 数据库类型：mysql, sqlite
 }
 
 type LoggerConf struct {
-	Level           zapcore.Level `toml:"level"`           // 日志级别
+	Level           zapcore.Level `toml:"level"`           // 日志级别，支持debug(-1)/info(0)/warn(1)/error(2)/dpanic(3)/panic(4)/fatal(5)
 	StackTraceLevel zapcore.Level `toml:"stackTraceLevel"` // 堆栈级别
 	Filename        string        `toml:"filename"`        // 日志文件路径
 	MaxSize         int           `toml:"maxSize"`         // 日志文件最大大小（MB）
@@ -55,12 +54,14 @@ type LoggerConf struct {
 	EnableCompress  bool          `toml:"enableCompress"`  // 是否启用压缩
 }
 
-type MysqlConf struct {
-	DSN string `toml:"dsn"` // 数据库连接字符串
+type SchedulerConf struct {
+	EnableTasks       []string `toml:"enableTasks"`       // 启用的任务
+	RunAtStartupTasks []string `toml:"runAtStartupTasks"` // 启动时运行的任务
 }
 
-type SqliteConf struct {
-	Path string `toml:"path"` // 数据库文件路径
+type DBConf struct {
+	Type string `toml:"type"` // 数据库类型：mysql, sqlite
+	DSN  string `toml:"dsn"`  // 数据库连接字符串: user:pass@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true, file:test.db?cache=shared&mode=memory
 }
 
 type RedisConf struct {
@@ -69,26 +70,37 @@ type RedisConf struct {
 	Expire int    `toml:"expire"` // 过期时间（秒）
 }
 
+type ProxyConf struct {
+	BaseUrl string `toml:"baseUrl"` // 代理服务地址
+	Secret  string `toml:"secret"`  // 代理服务密钥
+}
+
 func Initialize() {
 	conf := NewDefaultConfig()
 	viperInstance := viper.New()
+	viperInstance.AutomaticEnv()
+	viperInstance.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	//不设置时，Viper会自动寻找AddConfigPath下的 config.* 配置文件
 	viperInstance.AddConfigPath(".")
-	viperInstance.AddConfigPath(conf.Base.RootPath)
+	viperInstance.AddConfigPath(conf.RootPath)
 	viperInstance.AddConfigPath("../")
 	err := viperInstance.ReadInConfig()
 	if err == nil {
 		viperInstance.OnConfigChange(func(e fsnotify.Event) {
 			fmt.Println("Config file changed:", e.Name)
+			if err := viperInstance.Unmarshal(&conf); err != nil {
+				fmt.Println("Error unmarshalling config after change:", err)
+			}
+			Conf = conf
 			updateGlobalVars()
 		})
 		viperInstance.WatchConfig()
-		err = viperInstance.Unmarshal(&conf)
-		if err != nil {
-			panic(err)
-		}
 	} else {
 		fmt.Println(err)
+	}
+	err = viperInstance.Unmarshal(&conf)
+	if err != nil {
+		panic(err)
 	}
 	Conf = conf
 	updateGlobalVars()
@@ -97,12 +109,16 @@ func Initialize() {
 func updateGlobalVars() {
 	fmt.Println("Use config: ")
 	fmt.Printf("%+v", Conf)
-	Base = Conf.Base
+	AppName = Conf.AppName
+	RootPath = Conf.RootPath
+	Languages = Conf.Languages
+	Goroutines = Conf.Goroutines
 	Server = Conf.Server
 	Logger = Conf.Logger
+	Scheduler = Conf.Scheduler
+	DB = Conf.DB
 	Redis = Conf.Redis
-	Mysql = Conf.Mysql
-	Sqlite = Conf.Sqlite
+	Proxy = Conf.Proxy
 }
 
 func NewDefaultConfig() *Config {
@@ -112,23 +128,11 @@ func NewDefaultConfig() *Config {
 	}
 	rootPath := path.Dir(exePath)
 
-	base := BaseConf{
-		AppName:  "Fiber APP Template",
-		RootPath: rootPath,
-		Languages: []string{
-			"en",
-			"zh",
-		},
-		ProxyApi:    "",
-		ProxySecret: "",
-	}
-
 	server := ServerConf{
 		Address:       "0.0.0.0",
 		Port:          "8888",
 		EnableMigrate: false,
 		Secret:        "FiberTemplate",
-		DBType:        "",
 	}
 
 	logger := LoggerConf{
@@ -141,25 +145,40 @@ func NewDefaultConfig() *Config {
 		EnableCompress:  true,
 	}
 
+	s := SchedulerConf{
+		EnableTasks:       []string{},
+		RunAtStartupTasks: []string{},
+	}
+
+	db := DBConf{
+		Type: "",
+		DSN:  "",
+	}
+
 	redis := RedisConf{
 		Enable: false,
 		DSN:    "rediss://:@localhost:6379",
 		Expire: 3600,
 	}
-	mysql := MysqlConf{
-		DSN: "user:pass@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true",
-	}
 
-	sqlite := SqliteConf{
-		Path: filepath.Join(rootPath, "app.db"),
+	proxy := ProxyConf{
+		BaseUrl: "",
+		Secret:  "",
 	}
 
 	return &Config{
-		Base:   base,
-		Server: server,
-		Logger: logger,
-		Redis:  redis,
-		Mysql:  mysql,
-		Sqlite: sqlite,
+		AppName:  "Fiber APP Template",
+		RootPath: rootPath,
+		Languages: []string{
+			"en",
+			"zh",
+		},
+		Goroutines: 50,
+		Server:     server,
+		Logger:     logger,
+		Scheduler:  s,
+		DB:         db,
+		Redis:      redis,
+		Proxy:      proxy,
 	}
 }

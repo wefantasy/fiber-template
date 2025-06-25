@@ -6,5 +6,4 @@ import (
 
 func TestConfig(t *testing.T) {
 	Initialize()
-	t.Logf("%+v", Conf)
 }

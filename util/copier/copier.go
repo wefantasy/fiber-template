@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+// TransferListType 转化列表类型
+//
+//	src any - 源对象，可以是结构体或map[string]any
+//	dest any - 目标对象，必须是指向结构体的指针
 func TransferListType[S, T any](objects []S, targetObjects *[]T) error {
 	for _, object := range objects {
 		var targetObject T
@@ -21,15 +25,10 @@ func TransferListType[S, T any](objects []S, targetObjects *[]T) error {
 }
 
 // CopyProperties 将源对象的属性值复制到目标对象中
-// 参数:
 //
-//	src interface{} - 源对象，可以是结构体或map[string]interface{}
-//	dest interface{} - 目标对象，必须是指向结构体的指针
-//
-// 返回值:
-//
-//	error - 如果复制过程中出现错误则返回错误信息，否则返回nil
-func CopyProperties(src, dest interface{}) error {
+//	src any - 源对象，可以是结构体或map[string]any
+//	dest any - 目标对象，必须是指向结构体的指针
+func CopyProperties(src, dest any) error {
 	destVal := reflect.ValueOf(dest)
 	// 检查目标对象是否是指针类型
 	if destVal.Kind() != reflect.Ptr {
@@ -65,19 +64,14 @@ func CopyProperties(src, dest interface{}) error {
 		}
 		return copyFromMap(srcVal, destElem)
 	default:
-		return errors.New("src must be a struct or a map[string]interface{}")
+		return errors.New("src must be a struct or a map[string]any")
 	}
 }
 
 // copyFromStruct 从源结构体复制字段值到目标结构体
-// 参数:
 //
 //	srcStructVal reflect.Value - 源结构体的反射值
 //	destStructElem reflect.Value - 目标结构体元素的反射值(必须可设置)
-//
-// 返回值:
-//
-//	error - 如果复制过程中出现错误则返回错误信息，否则返回nil
 func copyFromStruct(srcStructVal, destStructElem reflect.Value) error {
 	srcType := srcStructVal.Type()
 	// 遍历源结构体的所有字段
@@ -102,14 +96,9 @@ func copyFromStruct(srcStructVal, destStructElem reflect.Value) error {
 }
 
 // copyFromMap 从map类型源对象复制值到目标结构体
-// 参数:
 //
 //	srcMapVal reflect.Value - 源map的反射值
 //	destStructElem reflect.Value - 目标结构体元素的反射值(必须可设置)
-//
-// 返回值:
-//
-//	error - 如果复制过程中出现错误则返回错误信息，否则返回nil
 func copyFromMap(srcMapVal, destStructElem reflect.Value) error {
 	for _, keyVal := range srcMapVal.MapKeys() {
 		// 获取map key对应的字段名

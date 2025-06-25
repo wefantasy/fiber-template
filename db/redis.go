@@ -31,7 +31,7 @@ type RedisDB struct {
 	*redis.Client
 }
 
-func (rdb *RedisDB) SetStruct(key string, val interface{}) error {
+func (rdb *RedisDB) SetStruct(key string, val any) error {
 	if !conf.Redis.Enable {
 		return nil
 	}
@@ -49,7 +49,7 @@ func (rdb *RedisDB) SetStruct(key string, val interface{}) error {
 	return nil
 }
 
-func (rdb *RedisDB) SetStructWithExpire(key string, val interface{}, expire time.Duration) error {
+func (rdb *RedisDB) SetStructWithExpire(key string, val any, expire time.Duration) error {
 	if !conf.Redis.Enable {
 		return nil
 	}
@@ -68,7 +68,7 @@ func (rdb *RedisDB) SetStructWithExpire(key string, val interface{}, expire time
 	return nil
 }
 
-func (rdb *RedisDB) GetStruct(key string, obj interface{}) error {
+func (rdb *RedisDB) GetStruct(key string, obj any) error {
 	if !conf.Redis.Enable {
 		return nil
 	}

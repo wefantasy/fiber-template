@@ -70,7 +70,7 @@ func Test_CopyProperties_Struct(t *testing.T) {
 }
 
 func Test_CopyProperties_Map(t *testing.T) {
-	mapSrc := map[string]interface{}{
+	mapSrc := map[string]any{
 		"Name":        "MapSource",
 		"CountStr":    "xyz",
 		"ValidStrInt": "777",
@@ -107,5 +107,5 @@ func TestCopyPropertiesSubMap(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	t.Logf(util.StructToJson(&src))
+	t.Log(util.StructToJson(&src))
 }

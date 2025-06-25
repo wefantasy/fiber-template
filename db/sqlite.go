@@ -15,18 +15,18 @@ import (
 )
 
 func InitializeSqlite() {
-	if !strings.Contains(conf.Server.DBType, "sqlite") {
+	if !strings.Contains(conf.DB.Type, "sqlite") {
 		log.Info("Sqlite dont Enable")
 		return
 	}
-	dbPath := conf.Sqlite.Path
-	if dbPath == "" {
-		dbPath = filepath.Join(conf.Base.RootPath, "app.db")
+	dsn := conf.DB.DSN
+	if dsn == "" {
+		dsn = filepath.Join(conf.RootPath, "app.db")
 	}
 
 	driverName := "sqlite3WithHooks"
 	sql.Register(driverName, sqlhooks.Wrap(&sqlite.Driver{}, &Hooks{}))
-	db := getDBConnection(driverName, dbPath)
+	db := getDBConnection(driverName, dsn)
 	err := db.Ping()
 	if err != nil {
 		log.Panic(err)
@@ -38,7 +38,7 @@ func InitializeSqlite() {
 }
 
 func MigrateSqlite() {
-	if !strings.Contains(conf.Server.DBType, "sqlite") {
+	if !strings.Contains(conf.DB.Type, "sqlite") {
 		return
 	}
 

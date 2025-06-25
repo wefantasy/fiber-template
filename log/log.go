@@ -54,114 +54,114 @@ func getWriter() io.Writer {
 	return zapcore.AddSync(lumberJackLogger)
 }
 
-func Debug(args ...interface{}) {
+func Debug(args ...any) {
 	zap.S().Debug(args...)
 }
 
-func Info(args ...interface{}) {
+func Info(args ...any) {
 	zap.S().Info(args...)
 }
 
-func Warn(args ...interface{}) {
+func Warn(args ...any) {
 	zap.S().Warn(args...)
 }
 
-func Error(args ...interface{}) {
+func Error(args ...any) {
 	zap.S().Error(args...)
 }
 
-func DPanic(args ...interface{}) {
+func DPanic(args ...any) {
 	zap.S().DPanic(args...)
 }
 
-func Panic(args ...interface{}) {
+func Panic(args ...any) {
 	zap.S().Panic(args...)
 }
 
-func Fatal(args ...interface{}) {
+func Fatal(args ...any) {
 	zap.S().Fatal(args...)
 }
 
-func Debugf(template string, args ...interface{}) {
+func Debugf(template string, args ...any) {
 	zap.S().Debugf(template, args...)
 }
 
-func Infof(template string, args ...interface{}) {
+func Infof(template string, args ...any) {
 	zap.S().Infof(template, args...)
 }
 
-func Warnf(template string, args ...interface{}) {
+func Warnf(template string, args ...any) {
 	zap.S().Warnf(template, args...)
 }
 
-func Errorf(template string, args ...interface{}) {
+func Errorf(template string, args ...any) {
 	zap.S().Errorf(template, args...)
 }
 
-func DPanicf(template string, args ...interface{}) {
+func DPanicf(template string, args ...any) {
 	zap.S().DPanicf(template, args...)
 }
 
-func Panicf(template string, args ...interface{}) {
+func Panicf(template string, args ...any) {
 	zap.S().Panicf(template, args...)
 }
 
-func Fatalf(template string, args ...interface{}) {
+func Fatalf(template string, args ...any) {
 	zap.S().Fatalf(template, args...)
 }
 
-func Debugw(msg string, keysAndValues ...interface{}) {
+func Debugw(msg string, keysAndValues ...any) {
 	zap.S().Debugw(msg, keysAndValues...)
 }
 
-func Infow(msg string, keysAndValues ...interface{}) {
+func Infow(msg string, keysAndValues ...any) {
 	zap.S().Infow(msg, keysAndValues...)
 }
 
-func Warnw(msg string, keysAndValues ...interface{}) {
+func Warnw(msg string, keysAndValues ...any) {
 	zap.S().Warnw(msg, keysAndValues...)
 }
 
-func Errorw(msg string, keysAndValues ...interface{}) {
+func Errorw(msg string, keysAndValues ...any) {
 	zap.S().Errorw(msg, keysAndValues...)
 }
 
-func DPanicw(msg string, keysAndValues ...interface{}) {
+func DPanicw(msg string, keysAndValues ...any) {
 	zap.S().DPanicw(msg, keysAndValues...)
 }
 
-func Panicw(msg string, keysAndValues ...interface{}) {
+func Panicw(msg string, keysAndValues ...any) {
 	zap.S().Panicw(msg, keysAndValues...)
 }
 
-func Fatalw(msg string, keysAndValues ...interface{}) {
+func Fatalw(msg string, keysAndValues ...any) {
 	zap.S().Fatalw(msg, keysAndValues...)
 }
 
-func Debugln(args ...interface{}) {
+func Debugln(args ...any) {
 	zap.S().Debugln(args...)
 }
 
-func Infoln(args ...interface{}) {
+func Infoln(args ...any) {
 	zap.S().Infoln(args...)
 }
 
-func Warnln(args ...interface{}) {
+func Warnln(args ...any) {
 	zap.S().Warnln(args...)
 }
 
-func Errorln(args ...interface{}) {
+func Errorln(args ...any) {
 	zap.S().Errorln(args...)
 }
 
-func DPanicln(args ...interface{}) {
+func DPanicln(args ...any) {
 	zap.S().DPanicln(args...)
 }
 
-func Panicln(args ...interface{}) {
+func Panicln(args ...any) {
 	zap.S().Panicln(args...)
 }
 
-func Fatalln(args ...interface{}) {
+func Fatalln(args ...any) {
 	zap.S().Fatalln(args...)
 }

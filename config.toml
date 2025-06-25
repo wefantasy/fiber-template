@@ -1,29 +1,31 @@
-[base]
 appName = "Fiber APP Template"
 languages = ["zh", "en"]
-proxyApi = ""
-proxySecret = ""
+goroutines = 50
 
 [server]
 address = "0.0.0.0"
 port = "8888"
 enableMigrate = false
 secret = "FiberTemplate"
-dbType = "sqlite"
 
-[mysql]
-dsn = "root:password@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true"
-
-[sqlite]
-path = "app.db"
+[db]
+type = "sqlite"
+dsn = "app.db"
 
 [redis]
 enable = false
 dsn = "rediss://:@localhost:6379"
 expire = 3600
 
+[scheduler]
+enableTasks = ["ExampleTask"]
+runAtStartupTasks = ["ExampleTask"]
+
+[proxy]
+baseUrl = "https://example.com"
+secret = "FiberTemplate"
+
 [logger]
-# 日志级别，支持debug(-1)/info(0)/warn(1)/error(2)/dpanic(3)/panic(4)/fatal(5)
 level = 0
 stackTraceLevel = 2
 filename = "app.log"

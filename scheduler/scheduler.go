@@ -3,7 +3,6 @@ package scheduler
 import (
 	"app/log"
 	"github.com/robfig/cron/v3"
-	"go.uber.org/zap"
 	"time"
 )
 
@@ -11,38 +10,33 @@ func Initialize() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				zap.L().Error("CRON SCHEDULER PANICKED!",
-					zap.Any("panic_reason", r),
-					zap.Stack("stacktrace"),
-				)
+				log.Error("CRON SCHEDULER PANICKED!")
+				log.Error(r)
 			}
 		}()
 
 		loc, _ := time.LoadLocation("Asia/Shanghai")
 		l := &loggerAdapter{}
 		c := cron.New(cron.WithLogger(l), cron.WithChain(cron.Recover(l)), cron.WithSeconds(), cron.WithLocation(loc))
-		everySecondMinuteTasks := []Task{
+
+		tasks := []Task{
 			&ExampleTask{},
 		}
-		RunTaskSimple(everySecondMinuteTasks)
-		_, err := c.AddFunc("* * * * * *", func() {
-			RunTask(everySecondMinuteTasks)
-		})
-		if err != nil {
-			log.Error(err)
-			return
+		for _, task := range tasks {
+			task.Register(c)
 		}
+
 		c.Start()
 	}()
 }
 
 type loggerAdapter struct{}
 
-func (l *loggerAdapter) Info(msg string, keysAndValues ...interface{}) {
+func (l *loggerAdapter) Info(msg string, keysAndValues ...any) {
 	log.Infow(msg, keysAndValues...)
 }
 
-func (l *loggerAdapter) Error(err error, msg string, keysAndValues ...interface{}) {
-	allFields := append([]interface{}{"error", err}, keysAndValues...)
+func (l *loggerAdapter) Error(err error, msg string, keysAndValues ...any) {
+	allFields := append([]any{"error", err}, keysAndValues...)
 	log.Errorw(msg, allFields...)
 }

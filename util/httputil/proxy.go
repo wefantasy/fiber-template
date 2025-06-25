@@ -52,12 +52,12 @@ func ExecRequestWithProxy(method, url string, body any, header map[string]string
 //	error: 如果获取代理失败，则返回错误
 func GetProxyTransportFromApi() (*http.Transport, error) {
 	header := make(map[string]string)
-	header["X-API-Secret"] = conf.Base.ProxySecret
+	header["X-API-Secret"] = conf.Proxy.Secret
 
-	if conf.Base.ProxyApi == "" {
+	if conf.Proxy.BaseUrl == "" {
 		return nil, fmt.Errorf("proxy server is empty")
 	}
-	respBody, err := Request(http.MethodGet, conf.Base.ProxyApi, "", header, nil)
+	respBody, err := Request(http.MethodGet, conf.Proxy.BaseUrl, "", header, nil)
 	if err != nil {
 		return nil, err
 	}

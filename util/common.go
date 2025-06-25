@@ -21,7 +21,7 @@ func DePointer[T any](o *T) T {
 }
 
 // DeReference reflect指针转对象
-func DeReference(o interface{}) interface{} {
+func DeReference(o any) any {
 	value := reflect.ValueOf(o)
 	if value.Kind() == reflect.Ptr {
 		return value.Elem().Interface()
@@ -35,8 +35,8 @@ func JsonIndex(data string, index string) (string, error) {
 		return data, nil
 	}
 
-	var result interface{}
-	var d map[string]interface{}
+	var result any
+	var d map[string]any
 	err := json.Unmarshal([]byte(data), &d)
 	if err != nil {
 		log.Warnf("json unmarshal failed: %v", err)
@@ -47,7 +47,7 @@ func JsonIndex(data string, index string) (string, error) {
 	for i, v := range indexes {
 		result = d[v]
 		if i < len(indexes)-1 {
-			if m, ok := d[v].(map[string]interface{}); ok {
+			if m, ok := d[v].(map[string]any); ok {
 				d = m
 			} else {
 				return "", fmt.Errorf("invalid index '%s'", indexes[i+1])
@@ -71,8 +71,8 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 		return nil
 	}
 
-	var result interface{}
-	var d map[string]interface{}
+	var result any
+	var d map[string]any
 	err := json.Unmarshal([]byte(data), &d)
 	if err != nil {
 		log.Warnf("json unmarshal failed: %v", err)
@@ -83,7 +83,7 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 	for i, v := range indexes {
 		result = d[v]
 		if i < len(indexes)-1 {
-			if m, ok := d[v].(map[string]interface{}); ok {
+			if m, ok := d[v].(map[string]any); ok {
 				d = m
 			} else {
 				return fmt.Errorf("invalid index '%s'", indexes[i+1])
@@ -103,12 +103,12 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 // StructToJson 将任意结构体或对象转换为JSON字符串
 // 参数:
 //
-//	o interface{} - 需要转换的对象，可以是任意类型
+//	o any - 需要转换的对象，可以是任意类型
 //
 // 返回值:
 //
 //	string - 转换后的JSON字符串，如果转换失败则返回空字符串
-func StructToJson(o interface{}) string {
+func StructToJson(o any) string {
 	resultJson, err := json.Marshal(o)
 	if err != nil {
 		return ""
@@ -116,16 +116,16 @@ func StructToJson(o interface{}) string {
 	return string(resultJson)
 }
 
-// StructToMap 将结构体转换为 map[string]interface{}
+// StructToMap 将结构体转换为 map[string]any
 // 参数:
 //
-//	obj interface{} - 需要转换的结构体
+//	obj any - 需要转换的结构体
 //
 // 返回值:
 //
-//	map[string]interface{} - 转换后的 map，键为结构体字段的 JSON 标签或字段名，值为字段的值
-func StructToMap(obj interface{}) map[string]interface{} {
-	m := make(map[string]interface{})
+//	map[string]any - 转换后的 map，键为结构体字段的 JSON 标签或字段名，值为字段的值
+func StructToMap(obj any) map[string]any {
+	m := make(map[string]any)
 	v := reflect.ValueOf(obj)
 	t := v.Type()
 

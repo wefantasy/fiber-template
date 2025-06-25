@@ -1,19 +1,22 @@
 package util
 
-import "sync"
+import (
+	"app/conf"
+	"sync"
+)
 
 type Pool struct {
 	taskQueue chan func()
 	wg        sync.WaitGroup
 }
 
-func NewPool(maxWorkers int) *Pool {
+// NewPool 创建一个新的任务池
+func NewPool() *Pool {
 	pool := &Pool{
-		taskQueue: make(chan func(), 1000),
+		taskQueue: make(chan func(), conf.Goroutines*2),
 	}
 
-	// 启动工作协程
-	for i := 0; i < maxWorkers; i++ {
+	for i := 0; i < conf.Goroutines; i++ {
 		pool.wg.Add(1)
 		go pool.worker()
 	}
@@ -21,6 +24,7 @@ func NewPool(maxWorkers int) *Pool {
 	return pool
 }
 
+// worker 处理任务队列中的任务
 func (p *Pool) worker() {
 	defer p.wg.Done()
 	for task := range p.taskQueue {
@@ -28,10 +32,12 @@ func (p *Pool) worker() {
 	}
 }
 
+// Submit 提交任务到任务队列
 func (p *Pool) Submit(task func()) {
 	p.taskQueue <- task
 }
 
+// Stop 停止任务池
 func (p *Pool) Stop() {
 	close(p.taskQueue)
 	p.wg.Wait()

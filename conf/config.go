@@ -13,6 +13,7 @@ import (
 var (
 	AppName    string
 	RootPath   string
+	Timezone   string
 	Languages  []string
 	Goroutines int
 	Conf       *Config
@@ -27,6 +28,7 @@ var (
 type Config struct {
 	AppName    string        `toml:"appName"`    // 应用名称
 	RootPath   string        `toml:"rootPath"`   // 应用根目录
+	Timezone   string        `toml:"timezone"`   // 时区
 	Languages  []string      `toml:"languages"`  // 支持的语言
 	Goroutines int           `toml:"goroutines"` // 默认协程数量
 	Server     ServerConf    `toml:"server"`
@@ -107,10 +109,9 @@ func Initialize() {
 }
 
 func updateGlobalVars() {
-	fmt.Println("Use config: ")
-	fmt.Printf("%+v", Conf)
 	AppName = Conf.AppName
 	RootPath = Conf.RootPath
+	Timezone = Conf.Timezone
 	Languages = Conf.Languages
 	Goroutines = Conf.Goroutines
 	Server = Conf.Server
@@ -169,6 +170,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		AppName:  "Fiber APP Template",
 		RootPath: rootPath,
+		Timezone: "Asia/Shanghai",
 		Languages: []string{
 			"en",
 			"zh",

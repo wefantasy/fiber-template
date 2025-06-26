@@ -42,7 +42,7 @@ func MigrateSqlite() {
 		return
 	}
 
-	if !conf.Server.EnableMigrate {
+	if !conf.DB.EnableMigrate {
 		log.Info("Sqlite dont Enable Migrate")
 	}
 

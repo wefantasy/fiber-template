@@ -135,7 +135,6 @@ func CheckProxyAvailabilityWithTestUrl(proxy, testUrl string) string {
 
 	if checkProxy(proxy, testUrl, false) {
 		log.Infof("✅ 代理 %s 可用于 HTTPS", proxy)
-		fmt.Println()
 		return "https"
 	}
 

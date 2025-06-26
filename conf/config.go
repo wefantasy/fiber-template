@@ -3,6 +3,7 @@ package conf
 import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
 	"os"
@@ -13,6 +14,7 @@ import (
 var (
 	AppName    string
 	RootPath   string
+	Timezone   string
 	Languages  []string
 	Goroutines int
 	Conf       *Config
@@ -27,6 +29,7 @@ var (
 type Config struct {
 	AppName    string        `toml:"appName"`    // 应用名称
 	RootPath   string        `toml:"rootPath"`   // 应用根目录
+	Timezone   string        `toml:"timezone"`   // 时区
 	Languages  []string      `toml:"languages"`  // 支持的语言
 	Goroutines int           `toml:"goroutines"` // 默认协程数量
 	Server     ServerConf    `toml:"server"`
@@ -38,10 +41,9 @@ type Config struct {
 }
 
 type ServerConf struct {
-	Address       string `toml:"address"`       // 监听地址
-	Port          string `toml:"port"`          // 监听端口
-	EnableMigrate bool   `toml:"enableMigrate"` // 是否启用数据库迁移
-	Secret        string `toml:"secret"`        // jwt密钥/Secret模式密钥
+	Address string `toml:"address"` // 监听地址
+	Port    string `toml:"port"`    // 监听端口
+	Secret  string `toml:"secret"`  // jwt密钥/Secret模式密钥
 }
 
 type LoggerConf struct {
@@ -60,8 +62,9 @@ type SchedulerConf struct {
 }
 
 type DBConf struct {
-	Type string `toml:"type"` // 数据库类型：mysql, sqlite
-	DSN  string `toml:"dsn"`  // 数据库连接字符串: user:pass@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true, file:test.db?cache=shared&mode=memory
+	Type          string `toml:"type"`          // 数据库类型：mysql, sqlite
+	DSN           string `toml:"dsn"`           // 数据库连接字符串: user:pass@tcp(127.0.0.1:3306)/template-db?charset=utf8mb4&parseTime=true, file:test.db?cache=shared&mode=memory
+	EnableMigrate bool   `toml:"enableMigrate"` // 是否启用数据库迁移
 }
 
 type RedisConf struct {
@@ -78,13 +81,27 @@ type ProxyConf struct {
 func Initialize() {
 	conf := NewDefaultConfig()
 	viperInstance := viper.New()
+
+	// 加载默认配置
+	var defaultConfigMap map[string]interface{}
+	err := mapstructure.Decode(conf, &defaultConfigMap)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to decode default config: %v", err))
+	}
+	err = viperInstance.MergeConfigMap(defaultConfigMap)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to merge default config map: %v", err))
+	}
+
+	// 加载环境变量配置
 	viperInstance.AutomaticEnv()
 	viperInstance.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	//不设置时，Viper会自动寻找AddConfigPath下的 config.* 配置文件
 	viperInstance.AddConfigPath(".")
 	viperInstance.AddConfigPath(conf.RootPath)
 	viperInstance.AddConfigPath("../")
-	err := viperInstance.ReadInConfig()
+	err = viperInstance.ReadInConfig()
 	if err == nil {
 		viperInstance.OnConfigChange(func(e fsnotify.Event) {
 			fmt.Println("Config file changed:", e.Name)
@@ -107,10 +124,9 @@ func Initialize() {
 }
 
 func updateGlobalVars() {
-	fmt.Println("Use config: ")
-	fmt.Printf("%+v", Conf)
 	AppName = Conf.AppName
 	RootPath = Conf.RootPath
+	Timezone = Conf.Timezone
 	Languages = Conf.Languages
 	Goroutines = Conf.Goroutines
 	Server = Conf.Server
@@ -129,10 +145,9 @@ func NewDefaultConfig() *Config {
 	rootPath := path.Dir(exePath)
 
 	server := ServerConf{
-		Address:       "0.0.0.0",
-		Port:          "8888",
-		EnableMigrate: false,
-		Secret:        "FiberTemplate",
+		Address: "0.0.0.0",
+		Port:    "8888",
+		Secret:  "FiberTemplate",
 	}
 
 	logger := LoggerConf{
@@ -151,8 +166,9 @@ func NewDefaultConfig() *Config {
 	}
 
 	db := DBConf{
-		Type: "",
-		DSN:  "",
+		Type:          "",
+		DSN:           "",
+		EnableMigrate: false,
 	}
 
 	redis := RedisConf{
@@ -169,6 +185,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		AppName:  "Fiber APP Template",
 		RootPath: rootPath,
+		Timezone: "Asia/Shanghai",
 		Languages: []string{
 			"en",
 			"zh",

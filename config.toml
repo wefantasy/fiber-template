@@ -1,16 +1,17 @@
 appName = "Fiber APP Template"
+timezone = "Asia/Shanghai"
 languages = ["zh", "en"]
 goroutines = 50
 
 [server]
 address = "0.0.0.0"
 port = "8888"
-enableMigrate = false
 secret = "FiberTemplate"
 
 [db]
 type = "sqlite"
 dsn = "app.db"
+enableMigrate = false
 
 [redis]
 enable = false

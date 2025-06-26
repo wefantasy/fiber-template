@@ -56,7 +56,7 @@ func MigrateMysql() {
 		return
 	}
 
-	if !conf.Server.EnableMigrate {
+	if !conf.DB.EnableMigrate {
 		log.Info("Mysql dont Enable Migrate")
 	}
 

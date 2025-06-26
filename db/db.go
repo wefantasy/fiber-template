@@ -1,6 +1,7 @@
 package db
 
 import (
+	"app/conf"
 	"app/log"
 	"context"
 	"database/sql"
@@ -13,6 +14,9 @@ func Initialize() {
 	InitializeRedis()
 	InitializeSqlite()
 	InitializeMysql()
+	if conf.DB.EnableMigrate {
+		Migrate()
+	}
 }
 
 func Migrate() {

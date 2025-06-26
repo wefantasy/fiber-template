@@ -2,11 +2,13 @@ package log
 
 import (
 	"app/conf"
+	"fmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"os"
+	"time"
 )
 
 func Initialize() {
@@ -30,13 +32,22 @@ func Initialize() {
 			}
 		}
 	}()
+
+	Infof("Use config: %+v", conf.Conf)
 }
 
 // 生成日志编码配置
 func getEncoder() zapcore.EncoderConfig {
 	encoderConfig := zap.NewProductionEncoderConfig()
-	// 设置时间格式
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	cst, err := time.LoadLocation(conf.Timezone)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading CST location: %v\n", err)
+		encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	} else {
+		encoderConfig.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+			enc.AppendString(t.In(cst).Format("2006-01-02 15:04:05.0000"))
+		}
+	}
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
 	// 返回json 格式的 日志编辑器
 	return encoderConfig

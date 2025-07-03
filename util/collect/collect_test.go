@@ -85,5 +85,5 @@ func TestFilterByStruct(t *testing.T) {
 	filter := User2{Name: "Lucia Mala", Sex: "Male"}
 
 	filteredUsers := FilterByStruct(users, filter)
-	fmt.Println(util.StructToJson(filteredUsers))
+	fmt.Println(util.ToJson(filteredUsers))
 }

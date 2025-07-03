@@ -20,7 +20,7 @@ func Initialize() {
 		c := cron.New(cron.WithLogger(l), cron.WithChain(cron.Recover(l)), cron.WithSeconds(), cron.WithLocation(loc))
 
 		tasks := []Task{
-			&ExampleTask{},
+			NewExampleTask(),
 		}
 		for _, task := range tasks {
 			task.Register(c)

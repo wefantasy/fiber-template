@@ -33,7 +33,7 @@ func Initialize() {
 		}
 	}()
 
-	Infof("Use config: %+v", conf.Conf)
+	Infof("Use config: %v", conf.Conf)
 }
 
 // 生成日志编码配置

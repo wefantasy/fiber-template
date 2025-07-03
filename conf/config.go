@@ -1,29 +1,30 @@
 package conf
 
 import (
+	"app/util"
+	"embed"
+	"errors"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"path"
 	"strings"
 )
 
 var (
-	AppName    string
-	RootPath   string
-	Timezone   string
-	Languages  []string
-	Goroutines int
-	Conf       *Config
-	Server     ServerConf
-	Logger     LoggerConf
-	Scheduler  SchedulerConf
-	Redis      RedisConf
-	DB         DBConf
-	Proxy      ProxyConf
+	AppName       string
+	RootPath      string
+	Timezone      string
+	Languages     []string
+	Goroutines    int
+	Conf          *Config
+	Server        ServerConf
+	Logger        LoggerConf
+	Scheduler     SchedulerConf
+	Redis         RedisConf
+	DB            DBConf
+	Proxy         ProxyConf
+	ViperInstance *viper.Viper
 )
 
 type Config struct {
@@ -78,52 +79,67 @@ type ProxyConf struct {
 	Secret  string `toml:"secret"`  // 代理服务密钥
 }
 
-func Initialize() {
-	conf := NewDefaultConfig()
-	viperInstance := viper.New()
+//go:embed default.toml
+var defaultConfigFS embed.FS
 
-	// 加载默认配置
-	var defaultConfigMap map[string]interface{}
-	err := mapstructure.Decode(conf, &defaultConfigMap)
+func Initialize() {
+	ViperInstance = viper.New()
+	ViperInstance.SetConfigType("toml")
+
+	// 打开嵌入的配置文件
+	defaultConfigFile, err := defaultConfigFS.Open("default.toml")
 	if err != nil {
-		panic(fmt.Sprintf("Failed to decode default config: %v", err))
+		panic(fmt.Sprintf("Fatal error: failed to open embedded config file: %v", err))
 	}
-	err = viperInstance.MergeConfigMap(defaultConfigMap)
+	defer defaultConfigFile.Close()
+	err = ViperInstance.ReadConfig(defaultConfigFile)
 	if err != nil {
-		panic(fmt.Sprintf("Failed to merge default config map: %v", err))
+		panic(fmt.Sprintf("Fatal error: failed to read embedded config: %v", err))
+	}
+
+	//不设置时，Viper会自动寻找AddConfigPath下的 config.* 配置文件
+	rootPath := util.GetRootPath()
+	ViperInstance.SetConfigName("config")
+	ViperInstance.AddConfigPath(rootPath)
+	ViperInstance.AddConfigPath("../")
+	// 查找并合并用户配置文件。如果文件不存在，Viper不会报错，这正是我们想要的。
+	// 它会覆盖掉之前从嵌入文件加载的默认值。
+	err = ViperInstance.MergeInConfig()
+	if err != nil {
+		// 如果错误不是 "配置文件未找到"，则打印错误
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
+			fmt.Println("Warning: failed to merge user config file:", err)
+		}
 	}
 
 	// 加载环境变量配置
-	viperInstance.AutomaticEnv()
-	viperInstance.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	ViperInstance.AutomaticEnv()
+	ViperInstance.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	//不设置时，Viper会自动寻找AddConfigPath下的 config.* 配置文件
-	viperInstance.AddConfigPath(".")
-	viperInstance.AddConfigPath(conf.RootPath)
-	viperInstance.AddConfigPath("../")
-	err = viperInstance.ReadInConfig()
-	if err == nil {
-		viperInstance.OnConfigChange(func(e fsnotify.Event) {
-			fmt.Println("Config file changed:", e.Name)
-			if err := viperInstance.Unmarshal(&conf); err != nil {
-				fmt.Println("Error unmarshalling config after change:", err)
-			}
-			Conf = conf
+	var conf Config
+	conf.RootPath = rootPath
+	if err := ViperInstance.Unmarshal(&conf); err != nil {
+		panic(fmt.Sprintf("Fatal error: unable to unmarshal config: %v", err))
+	}
+
+	ViperInstance.OnConfigChange(func(e fsnotify.Event) {
+		fmt.Println("Config file changed:", e.Name)
+		if err := ViperInstance.Unmarshal(&conf); err != nil {
+			fmt.Println("Error unmarshalling config after change:", err)
+		} else {
+			Conf = &conf
 			updateGlobalVars()
-		})
-		viperInstance.WatchConfig()
-	} else {
-		fmt.Println(err)
-	}
-	err = viperInstance.Unmarshal(&conf)
-	if err != nil {
-		panic(err)
-	}
-	Conf = conf
+		}
+	})
+	ViperInstance.WatchConfig()
+
+	Conf = &conf
 	updateGlobalVars()
 }
 
 func updateGlobalVars() {
+	fmt.Printf("Load Config file: %s\n", ViperInstance.ConfigFileUsed())
 	AppName = Conf.AppName
 	RootPath = Conf.RootPath
 	Timezone = Conf.Timezone
@@ -135,67 +151,4 @@ func updateGlobalVars() {
 	DB = Conf.DB
 	Redis = Conf.Redis
 	Proxy = Conf.Proxy
-}
-
-func NewDefaultConfig() *Config {
-	exePath, err := os.Executable()
-	if err != nil {
-		panic(err)
-	}
-	rootPath := path.Dir(exePath)
-
-	server := ServerConf{
-		Address: "0.0.0.0",
-		Port:    "8888",
-		Secret:  "FiberTemplate",
-	}
-
-	logger := LoggerConf{
-		Level:           zapcore.InfoLevel,
-		StackTraceLevel: zapcore.ErrorLevel,
-		Filename:        "app.log",
-		MaxSize:         100,
-		MaxBackups:      30,
-		MaxAge:          30,
-		EnableCompress:  true,
-	}
-
-	s := SchedulerConf{
-		EnableTasks:       []string{},
-		RunAtStartupTasks: []string{},
-	}
-
-	db := DBConf{
-		Type:          "",
-		DSN:           "",
-		EnableMigrate: false,
-	}
-
-	redis := RedisConf{
-		Enable: false,
-		DSN:    "rediss://:@localhost:6379",
-		Expire: 3600,
-	}
-
-	proxy := ProxyConf{
-		BaseUrl: "",
-		Secret:  "",
-	}
-
-	return &Config{
-		AppName:  "Fiber APP Template",
-		RootPath: rootPath,
-		Timezone: "Asia/Shanghai",
-		Languages: []string{
-			"en",
-			"zh",
-		},
-		Goroutines: 50,
-		Server:     server,
-		Logger:     logger,
-		Scheduler:  s,
-		DB:         db,
-		Redis:      redis,
-		Proxy:      proxy,
-	}
 }

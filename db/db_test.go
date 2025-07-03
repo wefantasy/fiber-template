@@ -8,12 +8,9 @@ import (
 	"time"
 )
 
-func init() {
+func TestMigrateSqlite(t *testing.T) {
 	conf.Initialize()
 	log.Initialize()
-}
-
-func TestMigrateSqlite(t *testing.T) {
 	InitializeSqlite()
 	MigrateSqlite()
 }

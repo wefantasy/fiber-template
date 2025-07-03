@@ -26,11 +26,11 @@ func RequestBase(method, url string, body any, header map[string]string, transpo
 	var bodyByte []byte
 	var err error
 	if body != nil {
-		log.Infof("request body: %s", string(bodyByte))
 		bodyByte, err = json.Marshal(body)
 		if err != nil {
 			return "", err
 		}
+		log.Infof("request body: %s", string(bodyByte))
 	}
 
 	client := &http.Client{}
@@ -52,7 +52,7 @@ func RequestBase(method, url string, body any, header map[string]string, transpo
 	}
 
 	if header != nil {
-		log.Infof("request header: %s", util.StructToJson(header))
+		log.Infof("request header: %s", util.ToJson(header))
 		for k, v := range header {
 			req.Header.Set(k, v)
 		}

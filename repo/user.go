@@ -24,8 +24,7 @@ func NewUserRepo() UserRepo {
 func (o *userRepo) Insert(c *fiber.Ctx, user *model.User) error {
 	sql := fmt.Sprintf("INSERT INTO user(%s) VALUES (%s)",
 		dbutil.NewBuilder(user).OnlyNonZero().BuildColumns(", "),
-		dbutil.NewBuilder(user).OnlyNonZero().WithPrefix(":").BuildColumns(", "))
-	user.CreatedAt = util.EnPointer(time.Now())
+		dbutil.NewBuilder(user).OnlyNonZero().WithPrefix(":").BuildNamedPlaceholders(", "))
 	result, err := db.DB.NamedExec(sql, user)
 	if err != nil {
 		log.Error(httputil.GetRequestId(c), err)

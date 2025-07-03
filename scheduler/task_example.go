@@ -11,6 +11,10 @@ import (
 type ExampleTask struct {
 }
 
+func NewExampleTask() *ExampleTask {
+	return &ExampleTask{}
+}
+
 func (o *ExampleTask) Name() string {
 	return "ExampleTask"
 }

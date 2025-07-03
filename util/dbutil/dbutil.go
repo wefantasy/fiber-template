@@ -1,17 +1,43 @@
 package dbutil
 
 import (
+	"app/conf"
 	"fmt"
 	"reflect"
 	"strings"
 	"sync"
 )
 
+// Quoter 定义了SQL标识符的引用行为接口
+type Quoter interface {
+	Quote(identifier string) string
+}
+
+// DoubleQuoteQuoter 使用双引号 (ANSI SQL, PostgreSQL)
+type DoubleQuoteQuoter struct{}
+
+func (q DoubleQuoteQuoter) Quote(s string) string { return `"` + s + `"` }
+
+// BacktickQuoter 使用反引号 (MySQL, MariaDB)
+type BacktickQuoter struct{}
+
+func (q BacktickQuoter) Quote(s string) string { return "`" + s + "`" }
+
+// BracketQuoter 使用方括号 (SQL Server)
+type BracketQuoter struct{}
+
+func (q BracketQuoter) Quote(s string) string { return "[" + s + "]" }
+
+// NoOpQuoter 不进行任何引用 (用于不需要或自定义处理的场景)
+type NoOpQuoter struct{}
+
+func (q NoOpQuoter) Quote(s string) string { return s }
+
 // columnInfo 存储从结构体字段中提取的关键信息
 type columnInfo struct {
 	Name  string        // db tag 的值
 	Value reflect.Value // 字段的 reflect.Value
-	IsPK  bool          // 假设我们增加一个主键的 tag
+	IsPK  bool          // tag中是否包含 "pk"
 }
 
 // structCache 用于缓存已解析的结构体信息，避免重复反射
@@ -20,20 +46,22 @@ var structCache = &sync.Map{}
 // parseStruct 解析结构体，提取字段信息并缓存结果
 func parseStruct(v reflect.Value) []columnInfo {
 	t := v.Type()
+	// 检查类型缓存是否存在，如果存在则直接返回缓存的结果
 	if cached, ok := structCache.Load(t); ok {
 		cachedCols := cached.([]columnInfo)
 		cols := make([]columnInfo, len(cachedCols))
-		typeInfo := cached.([]columnInfo) // The cached info is about the type
+		typeInfo := cached.([]columnInfo)
 		for i := 0; i < len(typeInfo); i++ {
 			cols[i] = columnInfo{
 				Name:  typeInfo[i].Name,
-				Value: v.Field(i), // Get the value from the current instance
+				Value: v.Field(i),
 				IsPK:  typeInfo[i].IsPK,
 			}
 		}
 		return cols
 	}
 
+	// 首次解析该类型，初始化类型信息
 	var typeInfo []columnInfo
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
@@ -41,21 +69,22 @@ func parseStruct(v reflect.Value) []columnInfo {
 		if dbTag == "" || dbTag == "-" {
 			continue
 		}
+		// 解析db标签内容（支持"column,pk"格式）
 		tagParts := strings.Split(dbTag, ",")
 		colName := tagParts[0]
 		isPK := false
+		// 检查是否包含主键标记
 		if len(tagParts) > 1 && tagParts[1] == "pk" {
 			isPK = true
 		}
 		typeInfo = append(typeInfo, columnInfo{
 			Name: colName,
 			IsPK: isPK,
-			// Value is not stored in the cache, as it's instance-specific
 		})
 	}
 	structCache.Store(t, typeInfo)
 
-	// Now build the instance-specific info
+	// 生成包含当前实例值的列信息
 	cols := make([]columnInfo, len(typeInfo))
 	for i, info := range typeInfo {
 		cols[i] = columnInfo{
@@ -81,24 +110,37 @@ type Builder struct {
 	cols        []columnInfo
 	prefix      string
 	filters     []func(c columnInfo) bool
-	customWhere []string // 新增: 存储自定义WHERE子句
-	orderBy     string   // 新增: 存储ORDER BY子句
-	limit       string   // 新增: 存储LIMIT/OFFSET子句
+	customWhere []string
+	orderBy     string
+	limit       string
+	quoter      Quoter
 }
 
 // NewBuilder 创建一个新的构建器实例
 func NewBuilder(o any) *Builder {
-	// 如果传入 nil，我们创建一个空的 builder，它仍然可以处理自定义子句
+	b := &Builder{
+		quoter: NoOpQuoter{},
+	}
 	if o == nil {
-		return &Builder{}
+		return b
 	}
 	v := deReference(o)
 	if v.Kind() != reflect.Struct {
 		panic("dbutil: NewBuilder expects a struct or a pointer to a struct")
 	}
-	return &Builder{
-		cols: parseStruct(v),
+	b.cols = parseStruct(v)
+	if strings.Contains(conf.DB.Type, "mysql") {
+		b = b.WithQuoter(BacktickQuoter{})
 	}
+	return b
+}
+
+// WithQuoter 设置一个自定义的 Quoter
+func (b *Builder) WithQuoter(q Quoter) *Builder {
+	if q != nil {
+		b.quoter = q
+	}
+	return b
 }
 
 // WithPrefix 为所有列名添加前缀 (e.g., "user.")
@@ -151,7 +193,6 @@ func (b *Builder) WithLimitOffset(limit, offset int) *Builder {
 
 // applyFilters 执行所有已注册的过滤器
 func (b *Builder) applyFilters() []columnInfo {
-	// 如果没有设置结构体，直接返回空
 	if b.cols == nil {
 		return nil
 	}
@@ -159,29 +200,6 @@ func (b *Builder) applyFilters() []columnInfo {
 	for _, c := range b.cols {
 		include := true
 		for _, f := range b.filters {
-			if !f(c) {
-				include = false
-				break
-			}
-		}
-		if include {
-			filtered = append(filtered, c)
-		}
-	}
-	return filtered
-}
-
-// applyValueFilters 执行所有已注册的【值】过滤器, 比如 OnlyNonZero
-func (b *Builder) applyValueFilters() []columnInfo {
-	if b.cols == nil {
-		return nil
-	}
-	var filtered []columnInfo
-	for _, c := range b.cols {
-		include := true
-		for _, f := range b.filters {
-			// 这里是关键，我们假设只有 IsZero 是值过滤器
-			// 一个更复杂的实现可以给过滤器分类
 			if !f(c) {
 				include = false
 				break
@@ -200,7 +218,7 @@ func (b *Builder) BuildColumns(separator string) string {
 	cols := b.applyFilters()
 	var names []string
 	for _, c := range cols {
-		names = append(names, b.prefix+c.Name)
+		names = append(names, b.prefix+b.quoter.Quote(c.Name))
 	}
 	return strings.Join(names, separator)
 }
@@ -213,13 +231,13 @@ func (b *Builder) BuildColumnsWithAlias(separator string) string {
 	}
 	var names []string
 	for _, c := range b.cols {
-		aliased := fmt.Sprintf(`%s%s AS "%s"`, b.prefix, c.Name, c.Name)
+		aliased := fmt.Sprintf(`%s%s AS "%s"`, b.prefix, b.quoter.Quote(c.Name), c.Name)
 		names = append(names, aliased)
 	}
 	return strings.Join(names, separator)
 }
 
-// BuildNamedPlaceholders 生成用于 INSERT 的命名占位符
+// BuildNamedPlaceholders 生成用于 sqlx 的命名占位符
 // 用法: builder.BuildNamedPlaceholders(",") -> ":id,:name,:email"
 func (b *Builder) BuildNamedPlaceholders(separator string) string {
 	cols := b.applyFilters()
@@ -236,7 +254,7 @@ func (b *Builder) BuildSetClauses(separator string) string {
 	cols := b.applyFilters()
 	var clauses []string
 	for _, c := range cols {
-		clauses = append(clauses, fmt.Sprintf("%s%s=:%s", b.prefix, c.Name, c.Name))
+		clauses = append(clauses, fmt.Sprintf("%s%s=:%s", b.prefix, b.quoter.Quote(c.Name), c.Name))
 	}
 	return strings.Join(clauses, separator)
 }
@@ -245,12 +263,11 @@ func (b *Builder) BuildSetClauses(separator string) string {
 // 用法: builder.BuildWhereClauses(" AND ") -> "id=:id AND name=:name"
 func (b *Builder) BuildWhereClauses(separator string) string {
 	autoClauses := []string{}
-	filteredCols := b.applyValueFilters()
+	filteredCols := b.applyFilters()
 	for _, c := range filteredCols {
-		autoClauses = append(autoClauses, fmt.Sprintf("%s%s=:%s", b.prefix, c.Name, c.Name))
+		autoClauses = append(autoClauses, fmt.Sprintf("%s%s=:%s", b.prefix, b.quoter.Quote(c.Name), c.Name))
 	}
 
-	// 2. 合并自动生成的和用户自定义的
 	allClauses := append(autoClauses, b.customWhere...)
 
 	if len(allClauses) == 0 {
@@ -270,12 +287,11 @@ func (b *Builder) BuildSelectQuery(tableName string) string {
 
 	// 1. SELECT columns
 	sb.WriteString("SELECT ")
-	// 默认使用带别名的列，这对 sqlx.StructScan 非常友好
 	sb.WriteString(b.BuildColumnsWithAlias(", "))
 
 	// 2. FROM table
 	sb.WriteString(" FROM ")
-	sb.WriteString(tableName)
+	sb.WriteString(b.quoter.Quote(tableName))
 
 	// 3. WHERE clause
 	whereClause := b.BuildWhereClauses(" AND ")

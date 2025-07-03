@@ -56,14 +56,14 @@ func Test_CopyProperties_Struct(t *testing.T) {
 
 	var dest DestStruct
 
-	t.Logf("Before copy (dest): %s\n", util.StructToJson(&dest))
-	t.Logf("Before copy (src): %s\n", util.StructToJson(&src))
+	t.Logf("Before copy (dest): %s\n", util.ToJson(&dest))
+	t.Logf("Before copy (src): %s\n", util.ToJson(&src))
 	err := CopyProperties(&src, &dest)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	t.Logf("After copy (dest): %s\n", util.StructToJson(&dest))
+	t.Logf("After copy (dest): %s\n", util.ToJson(&dest))
 	if dest.ID != 1 || *dest.Name != "SourceItem" || dest.CountStr != nil || *dest.ValidStrInt != 123 || *dest.FloatStrInt != 123 || dest.BadFloatStr != nil || dest.SalaryFloat != nil || *dest.AgeInt != 42.0 || dest.NonExistent != nil || *dest.IntToStr != "123" || *dest.Int16ToInt8 != 123 {
 		t.Error("CopyProperties failed")
 	}
@@ -80,10 +80,10 @@ func Test_CopyProperties_Map(t *testing.T) {
 		"AgeInt":      uint(25),
 	}
 	var destFromMap DestStruct
-	t.Logf("Before copy (destFromMap): %+s\n", util.StructToJson(&destFromMap))
-	t.Logf("Before copy (mapSrc): %+s\n", util.StructToJson(&mapSrc))
+	t.Logf("Before copy (destFromMap): %+s\n", util.ToJson(&destFromMap))
+	t.Logf("Before copy (mapSrc): %+s\n", util.ToJson(&mapSrc))
 	CopyProperties(mapSrc, &destFromMap)
-	t.Logf("After copy (destFromMap): %+s\n", util.StructToJson(&destFromMap))
+	t.Logf("After copy (destFromMap): %+s\n", util.ToJson(&destFromMap))
 	if destFromMap.ID != 0 || *destFromMap.Name != "MapSource" || destFromMap.CountStr != nil || *destFromMap.ValidStrInt != 777 || *destFromMap.FloatStrInt != 777 || destFromMap.BadFloatStr != nil || destFromMap.SalaryFloat != nil || *destFromMap.AgeInt != 25.0 {
 		t.Error("CopyProperties failed")
 	}
@@ -107,5 +107,5 @@ func TestCopyPropertiesSubMap(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	t.Log(util.StructToJson(&src))
+	t.Log(util.ToJson(&src))
 }

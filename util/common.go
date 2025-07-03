@@ -1,10 +1,12 @@
 package util
 
 import (
-	"app/log"
 	"encoding/json"
 	"fmt"
+	"go.uber.org/zap"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -39,7 +41,7 @@ func JsonIndex(data string, index string) (string, error) {
 	var d map[string]any
 	err := json.Unmarshal([]byte(data), &d)
 	if err != nil {
-		log.Warnf("json unmarshal failed: %v", err)
+		zap.S().Warnf("json unmarshal failed: %v", err)
 		return "", err
 	}
 
@@ -65,7 +67,7 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 	if len(index) == 0 {
 		err := json.Unmarshal([]byte(data), t)
 		if err != nil {
-			log.Warnf("json unmarshal failed: %v", err)
+			zap.S().Warnf("json unmarshal failed: %v", err)
 			return err
 		}
 		return nil
@@ -75,7 +77,7 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 	var d map[string]any
 	err := json.Unmarshal([]byte(data), &d)
 	if err != nil {
-		log.Warnf("json unmarshal failed: %v", err)
+		zap.S().Warnf("json unmarshal failed: %v", err)
 		return err
 	}
 
@@ -91,16 +93,16 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 		}
 	}
 
-	target := StructToJson(result)
+	target := ToJson(result)
 	err = json.Unmarshal([]byte(target), t)
 	if err != nil {
-		log.Warnf("json unmarshal failed: %v", err)
+		zap.S().Warnf("json unmarshal failed: %v", err)
 		return err
 	}
 	return nil
 }
 
-// StructToJson 将任意结构体或对象转换为JSON字符串
+// ToJson 将任意结构体或对象转换为JSON字符串
 // 参数:
 //
 //	o any - 需要转换的对象，可以是任意类型
@@ -108,7 +110,7 @@ func JsonToStructWithIndex[T any](data string, index string, t *T) error {
 // 返回值:
 //
 //	string - 转换后的JSON字符串，如果转换失败则返回空字符串
-func StructToJson(o any) string {
+func ToJson(o any) string {
 	resultJson, err := json.Marshal(o)
 	if err != nil {
 		return ""
@@ -116,7 +118,7 @@ func StructToJson(o any) string {
 	return string(resultJson)
 }
 
-// StructToMap 将结构体转换为 map[string]any
+// ToMap 将结构体转换为 map[string]any
 // 参数:
 //
 //	obj any - 需要转换的结构体
@@ -124,7 +126,7 @@ func StructToJson(o any) string {
 // 返回值:
 //
 //	map[string]any - 转换后的 map，键为结构体字段的 JSON 标签或字段名，值为字段的值
-func StructToMap(obj any) map[string]any {
+func ToMap(obj any) map[string]any {
 	m := make(map[string]any)
 	v := reflect.ValueOf(obj)
 	t := v.Type()
@@ -181,4 +183,40 @@ func RandString(n int) string {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
 	return string(b)
+}
+
+// GetRootPath 通过探测 go.mod 文件来智能确定项目根目录
+func GetRootPath() string {
+	// 尝试从当前工作目录向上查找 go.mod
+	dir, err := os.Getwd()
+	if err != nil {
+		return getExecutableDir()
+	}
+
+	// 无限循环，向上查找
+	for {
+		// 检查当前目录下是否存在 go.mod
+		goModPath := filepath.Join(dir, "go.mod")
+		if _, err := os.Stat(goModPath); err == nil {
+			return dir
+		}
+
+		// 到达文件系统根目录，仍未找到
+		if dir == filepath.Dir(dir) {
+			break
+		}
+
+		dir = filepath.Dir(dir)
+	}
+
+	return getExecutableDir()
+}
+
+// getExecutableDir 获取可执行文件所在的目录
+func getExecutableDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		panic(fmt.Sprintf("无法获取可执行文件路径: %v", err))
+	}
+	return filepath.Dir(exe)
 }

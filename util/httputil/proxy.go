@@ -57,7 +57,7 @@ func GetProxyTransportFromApi() (*http.Transport, error) {
 	if conf.Proxy.BaseUrl == "" {
 		return nil, fmt.Errorf("proxy server is empty")
 	}
-	respBody, err := Request(http.MethodGet, conf.Proxy.BaseUrl, "", header, nil)
+	respBody, err := Request(http.MethodGet, conf.Proxy.BaseUrl, nil, header, nil)
 	if err != nil {
 		return nil, err
 	}

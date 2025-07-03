@@ -1,7 +1,6 @@
 package util
 
 import (
-	"app/conf"
 	"sync"
 )
 
@@ -11,12 +10,12 @@ type Pool struct {
 }
 
 // NewPool 创建一个新的任务池
-func NewPool() *Pool {
+func NewPool(size int) *Pool {
 	pool := &Pool{
-		taskQueue: make(chan func(), conf.Goroutines*2),
+		taskQueue: make(chan func(), size*2),
 	}
 
-	for i := 0; i < conf.Goroutines; i++ {
+	for i := 0; i < size; i++ {
 		pool.wg.Add(1)
 		go pool.worker()
 	}

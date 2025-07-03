@@ -5,11 +5,8 @@ import (
 	"testing"
 )
 
-func init() {
-	conf.Initialize()
-}
-
 func TestGetHttpTransportWithProxy(t *testing.T) {
+	conf.Initialize()
 	_, err := GetProxyTransportFromApi()
 	if err != nil {
 		t.Error(err)

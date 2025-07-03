@@ -6,12 +6,9 @@ import (
 	"testing"
 )
 
-func init() {
+func Test_Logger(t *testing.T) {
 	conf.Initialize()
 	Initialize()
-}
-
-func Test_Logger(t *testing.T) {
 	Info("Test_Logger", 123)
 	Error("Test_Error")
 	zap.S().Info("Test_Logger", 123)

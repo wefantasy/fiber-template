@@ -17,7 +17,11 @@ func Initialize() {
 
 		loc, _ := time.LoadLocation("Asia/Shanghai")
 		l := &loggerAdapter{}
-		c := cron.New(cron.WithLogger(l), cron.WithChain(cron.Recover(l)), cron.WithSeconds(), cron.WithLocation(loc))
+		c := cron.New(
+			cron.WithLogger(l),
+			cron.WithChain(cron.Recover(l), cron.SkipIfStillRunning(l)),
+			cron.WithSeconds(),
+			cron.WithLocation(loc))
 
 		tasks := []Task{
 			NewExampleTask(),

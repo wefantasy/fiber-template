@@ -31,7 +31,7 @@ func (o *ExampleTask) Register(c *cron.Cron) {
 		return task == o.Name()
 	})
 	if isEnable {
-		_, err := c.AddFunc("*/5 * * * * *", func() {
+		_, err := c.AddFunc("*/2 * * * * *", func() {
 			o.Run()
 		})
 		if err != nil {
@@ -42,5 +42,11 @@ func (o *ExampleTask) Register(c *cron.Cron) {
 }
 
 func (o *ExampleTask) Run() {
-	log.Info(time.Now().Format("2006-01-02 15:04:05"))
+	startTime := time.Now()
+	log.Infof("Start Scheduling %s", o.Name())
+
+	log.Info("Start Scheduling Task")
+	time.Sleep(time.Second * 5)
+
+	log.Infof("End Scheduling %s, Used Time: %s", o.Name(), time.Since(startTime))
 }

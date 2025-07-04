@@ -29,7 +29,7 @@ secret = "FiberTemplate"
 [logger]
 level = 0
 stackTraceLevel = 2
-filename = "app.log"
+filename = "logs/app.log"
 maxSize = 100
 maxBackups = 30
 maxAge = 30

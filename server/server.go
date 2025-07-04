@@ -35,17 +35,25 @@ func NewServer() (*Server, error) {
 
 	// 初始化数据库
 	userRepo := repo.NewUserRepo()
-	repos := []repo.BaseRepo{userRepo}
+	repos := []repo.BaseRepo{
+		userRepo,
+	}
 
 	// 初始化服务
 	userService := serv.NewUserService(userRepo)
-	services := []serv.BaseServ{userService}
+	services := []serv.BaseServ{
+		userService,
+	}
 
 	// 初始化API
 	commonController := v1.NewCommonController(userService)
-	controllers := []v1.BaseContro{commonController}
+	controllers := []v1.BaseContro{
+		commonController,
+	}
 	authUserController := auth.NewUserController(userService)
-	authControllers := []v1.BaseContro{authUserController}
+	authControllers := []v1.BaseContro{
+		authUserController,
+	}
 
 	// 初始化Fiber
 	app := fiber.New(fiber.Config{

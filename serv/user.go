@@ -1,6 +1,7 @@
 package serv
 
 import (
+	"app/log"
 	"app/middleware"
 	"app/model"
 	"app/model/input"
@@ -8,9 +9,6 @@ import (
 	"app/repo"
 	"app/util"
 	"app/util/copier"
-	"app/util/httputil"
-
-	"app/log"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
@@ -29,7 +27,7 @@ func NewUserService(userRepo repo.UserRepo) UserServ {
 func (o *userServ) Insert(c *fiber.Ctx, user *model.User) error {
 	password, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	user.Password = util.EnPointer(string(password))
@@ -44,7 +42,7 @@ func (o *userServ) Update(c *fiber.Ctx, user *model.User) error {
 	if user.Password != nil && len(util.DePointer(user.Password)) > 0 {
 		password, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 		if err != nil {
-			log.Error(httputil.GetRequestId(c), err)
+			log.F(c).Error(err)
 			return err
 		}
 		user.Password = util.EnPointer(string(password))
@@ -105,7 +103,7 @@ func (o *userServ) Login(c *fiber.Ctx, userLogin *input.UserLogin) (string, erro
 		return "", err
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(*userDB.Password), []byte(*userLogin.Password)); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return "", err
 	}
 	token, err := middleware.GenerateJwt(*userLogin.Username)
@@ -123,7 +121,7 @@ func (o *userServ) Register(c *fiber.Ctx, userRegister *input.UserRegister) erro
 	}
 	password, err := bcrypt.GenerateFromPassword([]byte(*userRegister.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	user.Password = util.EnPointer(string(password))

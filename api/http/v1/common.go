@@ -37,7 +37,7 @@ func (o *CommonContro) RegisterRoute(api fiber.Router) {
 // @Produce		json
 // @Router			/ping	[get]
 func (o *CommonContro) ping(c *fiber.Ctx) error {
-	log.Info(httputil.GetRequestId(c), "pong")
+	log.F(c).Info("pong")
 	return c.Status(http.StatusOK).SendString("pong")
 }
 
@@ -51,7 +51,7 @@ func (o *CommonContro) ping(c *fiber.Ctx) error {
 func (o *CommonContro) login(c *fiber.Ctx) error {
 	user := &input.UserLogin{}
 	if err := c.BodyParser(user); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	token, err := o.userServ.Login(c, user)
@@ -71,11 +71,11 @@ func (o *CommonContro) login(c *fiber.Ctx) error {
 func (o *CommonContro) register(c *fiber.Ctx) error {
 	user := &input.UserRegister{}
 	if err := c.BodyParser(user); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	if *user.Username == "" || *user.Password == "" {
-		log.Error(httputil.GetRequestId(c), "用户名或密码不能为空")
+		log.F(c).Error("用户名或密码不能为空")
 		return code.ParamError
 	}
 	err := o.userServ.Register(c, user)

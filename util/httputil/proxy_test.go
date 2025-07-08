@@ -2,18 +2,22 @@ package httputil
 
 import (
 	"app/conf"
+	"app/log"
+	"app/util"
 	"testing"
 )
 
 func TestGetHttpTransportWithProxy(t *testing.T) {
 	conf.Initialize()
-	_, err := GetProxyTransportFromApi()
+	_, err := GetProxyTransportFromApi(nil)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestCheckProxyAvailability(t *testing.T) {
+	conf.Initialize()
+	log.Initialize()
 	tests := []struct {
 		name    string
 		proxy   string
@@ -55,7 +59,7 @@ func TestCheckProxyAvailability(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// 为每个测试用例设置mock行为
-			if got := CheckProxyAvailabilityWithTestUrl(tt.proxy, tt.testURL); got != tt.want {
+			if got := CheckProxyAvailabilityWithTestUrl(util.NewRootContext(), tt.proxy, tt.testURL); got != tt.want {
 				t.Errorf("CheckProxyAvailability() = %v, want %v", got, tt.want)
 			}
 		})

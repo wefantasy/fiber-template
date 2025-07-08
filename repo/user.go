@@ -5,7 +5,6 @@ import (
 	"app/model"
 	"app/util"
 	"app/util/dbutil"
-	"app/util/httputil"
 	"fmt"
 	"time"
 
@@ -27,12 +26,12 @@ func (o *userRepo) Insert(c *fiber.Ctx, user *model.User) error {
 		dbutil.NewBuilder(user).OnlyNonZero().WithPrefix(":").BuildNamedPlaceholders(", "))
 	result, err := db.DB.NamedExec(sql, user)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Info(err)
 		return err
 	}
 	id, err := result.LastInsertId()
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	user.Id = util.EnPointer(int(id))
@@ -44,7 +43,7 @@ func (o *userRepo) Delete(c *fiber.Ctx, id int) error {
 	sql := "DELETE FROM user WHERE id = ?"
 	_, err := db.DB.Exec(sql, id)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	db.RDB.Delete(model.UserCacheKey(id))
@@ -57,7 +56,7 @@ func (o *userRepo) Update(c *fiber.Ctx, user *model.User) error {
 	user.UpdatedAt = util.EnPointer(time.Now())
 	_, err := db.DB.NamedExec(sql, user)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	db.RDB.Delete(user.CacheKey())
@@ -72,12 +71,12 @@ func (o *userRepo) Select(c *fiber.Ctx, userFilter *model.User) ([]model.User, e
 	var users []model.User
 	stmt, err := db.DB.PrepareNamed(sql)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return nil, err
 	}
 	err = stmt.Select(&users, userFilter)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return nil, err
 	}
 	return users, nil
@@ -96,7 +95,7 @@ func (o *userRepo) SelectById(c *fiber.Ctx, id int) (*model.User, error) {
 
 	err := db.DB.Get(&user, sql, id)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return nil, err
 	}
 	return &user, nil
@@ -111,7 +110,7 @@ func (o *userRepo) SelectByUsername(c *fiber.Ctx, username string) (*model.User,
 	result := model.User{}
 	err := db.DB.Get(&result, sql, username)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return nil, err
 	}
 	return &result, nil
@@ -136,7 +135,7 @@ func (o *userRepo) SelectWithPagination(c *fiber.Ctx, p *model.Pagination) error
 	var users []model.User
 	err := db.DB.Select(&users, sql)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return err
 	}
 	p.Data = users
@@ -148,7 +147,7 @@ func (o *userRepo) SelectTotalCount(c *fiber.Ctx) (int, error) {
 	var total int
 	err := db.DB.Get(&total, sql)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return 0, err
 	}
 	return total, nil

@@ -2,7 +2,10 @@ package log
 
 import (
 	"app/conf"
+	"app/util"
+	"context"
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -16,14 +19,13 @@ func Initialize() {
 	encoder := zapcore.NewConsoleEncoder(getEncoder())
 
 	logHook1 := getWriter()
-	logHook2 := os.Stdout
 
 	core := zapcore.NewTee(
 		zapcore.NewCore(encoder, zapcore.AddSync(logHook1), conf.Logger.Level),
-		zapcore.NewCore(encoder, zapcore.AddSync(logHook2), conf.Logger.Level),
+		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), conf.Logger.Level),
 	)
 	// 需要传入 zap.AddCaller() 才会显示打日志点的文件名和行数
-	logger := zap.New(core, zap.AddCallerSkip(1), zap.AddCaller(), zap.AddStacktrace(conf.Logger.StackTraceLevel))
+	logger := zap.New(core, zap.AddCallerSkip(0), zap.AddCaller(), zap.AddStacktrace(conf.Logger.StackTraceLevel))
 	zap.ReplaceGlobals(logger)
 	defer func() {
 		if logHook1, ok := logHook1.(*lumberjack.Logger); ok {
@@ -34,6 +36,24 @@ func Initialize() {
 	}()
 
 	Infof("Use config: %v", conf.Conf)
+}
+
+func T(ctx context.Context) *zap.SugaredLogger {
+	if ctx == nil {
+		return zap.S()
+	}
+	if ti, ok := ctx.Value(util.TraceInfoKey).(*util.TraceInfo); ok {
+		return zap.S().With(util.TraceIdKey, ti.TraceId)
+	}
+	return zap.S()
+}
+
+func F(c *fiber.Ctx) *zap.SugaredLogger {
+	if c == nil {
+		return zap.S()
+	}
+	ctx := c.UserContext()
+	return T(ctx)
 }
 
 // 生成日志编码配置
@@ -66,113 +86,113 @@ func getWriter() io.Writer {
 }
 
 func Debug(args ...any) {
-	zap.S().Debug(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Debug(args...)
 }
 
 func Info(args ...any) {
-	zap.S().Info(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Info(args...)
 }
 
 func Warn(args ...any) {
-	zap.S().Warn(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Warn(args...)
 }
 
 func Error(args ...any) {
-	zap.S().Error(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Error(args...)
 }
 
 func DPanic(args ...any) {
-	zap.S().DPanic(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).DPanic(args...)
 }
 
 func Panic(args ...any) {
-	zap.S().Panic(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Panic(args...)
 }
 
 func Fatal(args ...any) {
-	zap.S().Fatal(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Fatal(args...)
 }
 
 func Debugf(template string, args ...any) {
-	zap.S().Debugf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Debugf(template, args...)
 }
 
 func Infof(template string, args ...any) {
-	zap.S().Infof(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Infof(template, args...)
 }
 
 func Warnf(template string, args ...any) {
-	zap.S().Warnf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Warnf(template, args...)
 }
 
 func Errorf(template string, args ...any) {
-	zap.S().Errorf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Errorf(template, args...)
 }
 
 func DPanicf(template string, args ...any) {
-	zap.S().DPanicf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).DPanicf(template, args...)
 }
 
 func Panicf(template string, args ...any) {
-	zap.S().Panicf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Panicf(template, args...)
 }
 
 func Fatalf(template string, args ...any) {
-	zap.S().Fatalf(template, args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Fatalf(template, args...)
 }
 
 func Debugw(msg string, keysAndValues ...any) {
-	zap.S().Debugw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Debugw(msg, keysAndValues...)
 }
 
 func Infow(msg string, keysAndValues ...any) {
-	zap.S().Infow(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Infow(msg, keysAndValues...)
 }
 
 func Warnw(msg string, keysAndValues ...any) {
-	zap.S().Warnw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Warnw(msg, keysAndValues...)
 }
 
 func Errorw(msg string, keysAndValues ...any) {
-	zap.S().Errorw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Errorw(msg, keysAndValues...)
 }
 
 func DPanicw(msg string, keysAndValues ...any) {
-	zap.S().DPanicw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).DPanicw(msg, keysAndValues...)
 }
 
 func Panicw(msg string, keysAndValues ...any) {
-	zap.S().Panicw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Panicw(msg, keysAndValues...)
 }
 
 func Fatalw(msg string, keysAndValues ...any) {
-	zap.S().Fatalw(msg, keysAndValues...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Fatalw(msg, keysAndValues...)
 }
 
 func Debugln(args ...any) {
-	zap.S().Debugln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Debugln(args...)
 }
 
 func Infoln(args ...any) {
-	zap.S().Infoln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Infoln(args...)
 }
 
 func Warnln(args ...any) {
-	zap.S().Warnln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Warnln(args...)
 }
 
 func Errorln(args ...any) {
-	zap.S().Errorln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Errorln(args...)
 }
 
 func DPanicln(args ...any) {
-	zap.S().DPanicln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).DPanicln(args...)
 }
 
 func Panicln(args ...any) {
-	zap.S().Panicln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Panicln(args...)
 }
 
 func Fatalln(args ...any) {
-	zap.S().Fatalln(args...)
+	zap.S().WithOptions(zap.AddCallerSkip(1)).Fatalln(args...)
 }

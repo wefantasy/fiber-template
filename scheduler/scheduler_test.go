@@ -6,7 +6,7 @@ import (
 )
 
 func TestSchedule(t *testing.T) {
-	go Initialize()
+	Initialize()
 	var wg sync.WaitGroup
 	wg.Add(1)
 	wg.Wait()

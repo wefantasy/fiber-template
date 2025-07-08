@@ -46,7 +46,7 @@ func MigrateSqlite() {
 		log.Info("Sqlite dont Enable Migrate")
 	}
 
-	sourceDriver, err := iofs.New(MigrationFS, "migrate-sqlite")
+	sourceDriver, err := iofs.New(MigrationFS, "migrate_sqlite")
 	if err != nil {
 		log.Fatalf("无法创建迁移源驱动: %v", err)
 	}

@@ -1,13 +1,14 @@
 package conf
 
 import (
-	"app/util"
 	"embed"
 	"errors"
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 	"go.uber.org/zap/zapcore"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -98,7 +99,7 @@ func Initialize() {
 	}
 
 	//不设置时，Viper会自动寻找AddConfigPath下的 config.* 配置文件
-	rootPath := util.GetRootPath()
+	rootPath := GetRootPath()
 	ViperInstance.SetConfigName("config")
 	ViperInstance.AddConfigPath(rootPath)
 	ViperInstance.AddConfigPath("../")
@@ -151,4 +152,40 @@ func updateGlobalVars() {
 	DB = Conf.DB
 	Redis = Conf.Redis
 	Proxy = Conf.Proxy
+}
+
+// GetRootPath 通过探测 go.mod 文件来智能确定项目根目录
+func GetRootPath() string {
+	// 尝试从当前工作目录向上查找 go.mod
+	dir, err := os.Getwd()
+	if err != nil {
+		return getExecutableDir()
+	}
+
+	// 无限循环，向上查找
+	for {
+		// 检查当前目录下是否存在 go.mod
+		goModPath := filepath.Join(dir, "go.mod")
+		if _, err := os.Stat(goModPath); err == nil {
+			return dir
+		}
+
+		// 到达文件系统根目录，仍未找到
+		if dir == filepath.Dir(dir) {
+			break
+		}
+
+		dir = filepath.Dir(dir)
+	}
+
+	return getExecutableDir()
+}
+
+// getExecutableDir 获取可执行文件所在的目录
+func getExecutableDir() string {
+	exe, err := os.Executable()
+	if err != nil {
+		panic(fmt.Sprintf("无法获取可执行文件路径: %v", err))
+	}
+	return filepath.Dir(exe)
 }

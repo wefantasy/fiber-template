@@ -60,7 +60,7 @@ func MigrateMysql() {
 		log.Info("Mysql dont Enable Migrate")
 	}
 
-	sourceDriver, err := iofs.New(MigrationFS, "migrate-mysql")
+	sourceDriver, err := iofs.New(MigrationFS, "migrate_mysql")
 	if err != nil {
 		log.Fatalf("无法创建迁移源驱动: %v", err)
 	}

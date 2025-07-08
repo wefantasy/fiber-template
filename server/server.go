@@ -50,9 +50,8 @@ func NewServer() (*Server, error) {
 	controllers := []v1.BaseContro{
 		commonController,
 	}
-	authUserController := auth.NewUserController(userService)
 	authControllers := []v1.BaseContro{
-		authUserController,
+		auth.NewUserController(userService),
 	}
 
 	// 初始化Fiber
@@ -61,7 +60,7 @@ func NewServer() (*Server, error) {
 		AppName:      conf.AppName,
 	})
 	app.Use(middleware.Recover())
-	app.Use(middleware.RequestId())
+	app.Use(middleware.TraceId())
 	app.Use(middleware.Logger())
 	app.Use(cors.New())
 	app.Use(middleware.Limiter())

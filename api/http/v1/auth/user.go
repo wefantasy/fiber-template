@@ -46,7 +46,7 @@ func (o *UserContro) Name() string {
 func (o *UserContro) Insert(c *fiber.Ctx) error {
 	user := new(model.User)
 	if err := c.BodyParser(user); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	err := o.userServ.Insert(c, user)
@@ -71,11 +71,11 @@ func (o *UserContro) Delete(c *fiber.Ctx) error {
 	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	if err := o.userServ.Delete(c, id); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	return httputil.JsonSuccess(c, nil)
@@ -92,7 +92,7 @@ func (o *UserContro) Delete(c *fiber.Ctx) error {
 func (o *UserContro) Update(c *fiber.Ctx) error {
 	user := &model.User{}
 	if err := c.BodyParser(user); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 
@@ -114,7 +114,7 @@ func (o *UserContro) Update(c *fiber.Ctx) error {
 func (o *UserContro) Select(c *fiber.Ctx) error {
 	userFilter := &input.UserFilter{}
 	if err := c.QueryParser(userFilter); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	users, err := o.userServ.Select(c, userFilter)
@@ -139,7 +139,7 @@ func (o *UserContro) SelectById(c *fiber.Ctx) error {
 	}
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	userOutput, err := o.userServ.SelectById(c, id)
@@ -161,7 +161,7 @@ func (o *UserContro) SelectById(c *fiber.Ctx) error {
 func (o *UserContro) SelectWithPagination(c *fiber.Ctx) error {
 	p := &model.Pagination{}
 	if err := c.ParamsParser(p); err != nil {
-		log.Error(httputil.GetRequestId(c), err)
+		log.F(c).Error(err)
 		return code.ParamError
 	}
 	err := o.userServ.SelectWithPagination(c, p)

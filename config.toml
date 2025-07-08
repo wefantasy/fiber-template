@@ -1,1 +1,2 @@
 appName = "Fiber APP Template Test"
+goroutines = 1

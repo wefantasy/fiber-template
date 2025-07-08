@@ -11,7 +11,7 @@ secret = "FiberTemplate"
 [db]
 type = "sqlite"
 dsn = "app.db"
-enableMigrate = false
+enableMigrate = true
 
 [redis]
 enable = false
@@ -19,7 +19,7 @@ dsn = "rediss://:@localhost:6379"
 expire = 3600
 
 [scheduler]
-enableTasks = ["ExampleTask"]
+enableTasks = [""]
 runAtStartupTasks = ["ExampleTask"]
 
 [proxy]

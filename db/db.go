@@ -24,8 +24,8 @@ func Migrate() {
 	MigrateMysql()
 }
 
-//go:embed migrate-sqlite/*.sql
-//go:embed migrate-mysql/*.sql
+//go:embed migrate_sqlite/*.sql
+//go:embed migrate_mysql/*.sql
 var MigrationFS embed.FS
 
 var DB *sqlx.DB

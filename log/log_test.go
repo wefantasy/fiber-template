@@ -2,15 +2,16 @@ package log
 
 import (
 	"app/conf"
+	"app/util"
 	"go.uber.org/zap"
 	"testing"
 )
 
-func Test_Logger(t *testing.T) {
+func TestLogger(t *testing.T) {
 	conf.Initialize()
 	Initialize()
-	Info("Test_Logger", 123)
-	Error("Test_Error")
-	zap.S().Info("Test_Logger", 123)
-	zap.L().Info("Test_Error")
+	Error("123")
+	zap.S().Error("234")
+	T(util.NewRootContext()).Error("345")
+	F(nil).Error("456")
 }

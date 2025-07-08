@@ -25,14 +25,14 @@ import (
 //
 //	string: 响应体
 //	error: 如果请求失败，则返回错误
-func ExecRequestWithProxy(method, url string, body any, header map[string]string, retry int) (string, error) {
+func ExecRequestWithProxy(ctx context.Context, method, url string, body any, header map[string]string, retry int) (string, error) {
 	for i := 0; i < retry; i++ {
-		log.Infof("Request with proxy, retry %d", i)
-		transport, err := GetProxyTransportFromApi()
+		log.T(ctx).Infof("Request with proxy, retry %d", i)
+		transport, err := GetProxyTransportFromApi(ctx)
 		if err != nil {
 			continue
 		}
-		resp, err := RequestBase(method, url, body, header, transport, 15*time.Second)
+		resp, err := RequestBase(ctx, method, url, body, header, transport, 15*time.Second)
 		if err != nil {
 			if IsStatusFailed(err) {
 				return "", err
@@ -50,14 +50,14 @@ func ExecRequestWithProxy(method, url string, body any, header map[string]string
 //
 //	*http.Transport: 解析成功则返回配置好的 Transport 实例，失败则返回默认的空 Transport
 //	error: 如果获取代理失败，则返回错误
-func GetProxyTransportFromApi() (*http.Transport, error) {
+func GetProxyTransportFromApi(ctx context.Context) (*http.Transport, error) {
 	header := make(map[string]string)
 	header["X-API-Secret"] = conf.Proxy.Secret
 
 	if conf.Proxy.BaseUrl == "" {
 		return nil, fmt.Errorf("proxy server is empty")
 	}
-	respBody, err := Request(http.MethodGet, conf.Proxy.BaseUrl, nil, header, nil)
+	respBody, err := Request(ctx, http.MethodGet, conf.Proxy.BaseUrl, nil, header, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func GetProxyTransportFromApi() (*http.Transport, error) {
 	port, _ := util.JsonIndex(respBody,
 		"data.port")
 	proxy := fmt.Sprintf("%s://%s:%s", protocol, ip, port)
-	return GetTransportWithUrl(proxy)
+	return GetTransportWithUrl(ctx, proxy)
 }
 
 // GetTransportWithUrl 用于获取一个 HTTP 或 SOCKS 代理的 Transport。
@@ -85,10 +85,10 @@ func GetProxyTransportFromApi() (*http.Transport, error) {
 //
 //	*http.Transport: 解析成功则返回配置好的 Transport 实例，失败则返回默认的空 Transport
 //	error: 如果解析代理地址失败，则返回错误
-func GetTransportWithUrl(proxy string) (*http.Transport, error) {
+func GetTransportWithUrl(ctx context.Context, proxy string) (*http.Transport, error) {
 	proxyURL, err := url.Parse(proxy)
 	if err != nil {
-		log.Debug("proxy format failed: ", err)
+		log.T(ctx).Debug("proxy format failed: ", err)
 		return nil, err
 	}
 
@@ -100,12 +100,12 @@ func GetTransportWithUrl(proxy string) (*http.Transport, error) {
 		transport.Proxy = nil
 		dialer := socks.Dial(proxyURL.String())
 		transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
-			log.Infof("Dialing to %s through SOCKS proxy %s", addr, proxyURL.Host)
+			log.T(ctx).Infof("Dialing to %s through SOCKS proxy %s", addr, proxyURL.Host)
 			return dialer(network, addr)
 		}
 	} else {
 		transport.Proxy = func(req *http.Request) (*url.URL, error) {
-			log.Infof("Dialing through HTTP proxy %s", proxyURL.Host)
+			log.T(ctx).Infof("Dialing through HTTP proxy %s", proxyURL.Host)
 			return proxyURL, nil
 		}
 	}
@@ -124,22 +124,22 @@ func GetTransportWithUrl(proxy string) (*http.Transport, error) {
 // 返回值:
 //
 //	string: "http"/"https"/""。
-func CheckProxyAvailability(proxy string) string {
-	return CheckProxyAvailabilityWithTestUrl(proxy, "https://httpbin.org/get")
+func CheckProxyAvailability(ctx context.Context, proxy string) string {
+	return CheckProxyAvailabilityWithTestUrl(ctx, proxy, "https://httpbin.org/get")
 }
 
 // CheckProxyAvailabilityWithTestUrl 用于测试一个代理地址的可用性。
 // 通过proxy访问testUrl来测试可用性，它首先尝试直接通过代理请求测试地址，如果失败，则会禁用证书校验后重试。
-func CheckProxyAvailabilityWithTestUrl(proxy, testUrl string) string {
-	log.Info("开始验证代理: ", proxy)
+func CheckProxyAvailabilityWithTestUrl(ctx context.Context, proxy, testUrl string) string {
+	log.T(ctx).Info("开始验证代理: ", proxy)
 
-	if checkProxy(proxy, testUrl, false) {
-		log.Infof("✅ 代理 %s 可用于 HTTPS", proxy)
+	if checkProxy(ctx, proxy, testUrl, false) {
+		log.T(ctx).Infof("✅ 代理 %s 可用于 HTTPS", proxy)
 		return "https"
 	}
 
-	if checkProxy(proxy, testUrl, true) {
-		log.Infof("✅ 代理 %s 可用于 HTTP", proxy)
+	if checkProxy(ctx, proxy, testUrl, true) {
+		log.T(ctx).Infof("✅ 代理 %s 可用于 HTTP", proxy)
 		return "http"
 	} else {
 		return ""
@@ -147,8 +147,8 @@ func CheckProxyAvailabilityWithTestUrl(proxy, testUrl string) string {
 }
 
 // checkProxy 是一个内部辅助函数，用于执行实际的HTTP请求。
-func checkProxy(proxyAddr string, testURL string, insecureSkipVerify bool) bool {
-	transport, err := GetTransportWithUrl(proxyAddr)
+func checkProxy(ctx context.Context, proxyAddr string, testURL string, insecureSkipVerify bool) bool {
+	transport, err := GetTransportWithUrl(ctx, proxyAddr)
 	if err != nil {
 		return false
 	}
@@ -158,7 +158,7 @@ func checkProxy(proxyAddr string, testURL string, insecureSkipVerify bool) bool 
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: insecureSkipVerify}
 	}
 
-	_, err = RequestBase(http.MethodGet, testURL, "", map[string]string{}, transport, 10*time.Second)
+	_, err = RequestBase(ctx, http.MethodGet, testURL, "", map[string]string{}, transport, 10*time.Second)
 	if err != nil {
 		return false
 	}

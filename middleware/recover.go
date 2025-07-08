@@ -5,7 +5,6 @@ import (
 	"app/util/httputil"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	"strings"
 )
 
 func Recover() fiber.Handler {
@@ -13,7 +12,7 @@ func Recover() fiber.Handler {
 		EnableStackTrace: true,
 		StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
 			log.Errorf("Panic occurred during request, requestId: %s, ip: %s, method: %s, path: %s, reason: %v",
-				strings.TrimSpace(httputil.GetRequestId(c)), c.IP(), c.Method(), c.Path(), e)
+				httputil.GetTraceId(c), c.IP(), c.Method(), c.Path(), e)
 		},
 	})
 }

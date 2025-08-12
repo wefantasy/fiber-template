@@ -1,8 +1,8 @@
 package httputil
 
 import (
+	"app/code"
 	"app/i18n"
-	"app/util"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
@@ -37,5 +37,5 @@ func GetTraceId(c *fiber.Ctx) string {
 	if c == nil {
 		return ""
 	}
-	return c.Locals(util.TraceIdKey).(string)
+	return c.Locals(code.TraceIdKey).(string)
 }

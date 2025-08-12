@@ -3,13 +3,11 @@ package db
 import (
 	"app/conf"
 	"app/log"
-	"database/sql"
 	"errors"
 	sqlite "github.com/glebarez/go-sqlite"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/qustavo/sqlhooks/v2"
 	"path/filepath"
 	"strings"
 )
@@ -25,15 +23,12 @@ func InitializeSqlite() {
 	}
 
 	driverName := "sqlite3WithHooks"
-	sql.Register(driverName, sqlhooks.Wrap(&sqlite.Driver{}, &Hooks{}))
+	registerHooks(driverName, &sqlite.Driver{})
+
 	db := getDBConnection(driverName, dsn)
-	err := db.Ping()
-	if err != nil {
+	if err := db.Ping(); err != nil {
 		log.Panic(err)
 	}
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
-
 	DB = db
 }
 
@@ -66,6 +61,7 @@ func MigrateSqlite() {
 		} else {
 			log.Fatalf("数据库迁移失败: %v", err)
 		}
+	} else {
+		log.Info("数据库迁移成功！")
 	}
-	log.Info("数据库迁移成功！")
 }

@@ -5,8 +5,10 @@ import (
 	"app/log"
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"embed"
 	"github.com/jmoiron/sqlx"
+	"github.com/qustavo/sqlhooks/v2"
 	"time"
 )
 
@@ -35,7 +37,7 @@ type Hooks struct{}
 
 // Before hook will print the query with it's args and return the context with the timestamp
 func (h *Hooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
-	log.Infof("Exec SQL: %s %v", query, args)
+	log.Infof("Exec SQL: \n%s %v", query, args)
 	return context.WithValue(ctx, "beginTime", time.Now()), nil
 }
 
@@ -52,5 +54,20 @@ func getDBConnection(driverName, dataSourceName string) *sqlx.DB {
 		log.Panic(err)
 	}
 	db := sqlx.NewDb(sqlDB, driverName)
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(100)
 	return db
+}
+
+func registerHooks(driverName string, driver driver.Driver) {
+	var driverIsRegistered bool
+	for _, d := range sql.Drivers() {
+		if d == driverName {
+			driverIsRegistered = true
+			break
+		}
+	}
+	if !driverIsRegistered {
+		sql.Register(driverName, sqlhooks.Wrap(driver, &Hooks{}))
+	}
 }

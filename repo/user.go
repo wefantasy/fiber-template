@@ -21,6 +21,7 @@ func NewUserRepo() UserRepo {
 }
 
 func (o *userRepo) Insert(c *fiber.Ctx, user *model.User) error {
+	user.CreatedAt = util.EnPointer(time.Now())
 	sql := fmt.Sprintf("INSERT INTO user(%s) VALUES (%s)",
 		dbutil.NewBuilder(user).OnlyNonZero().BuildColumns(", "),
 		dbutil.NewBuilder(user).OnlyNonZero().WithPrefix(":").BuildNamedPlaceholders(", "))
@@ -51,9 +52,9 @@ func (o *userRepo) Delete(c *fiber.Ctx, id int) error {
 }
 
 func (o *userRepo) Update(c *fiber.Ctx, user *model.User) error {
+	user.UpdatedAt = util.EnPointer(time.Now())
 	sql := fmt.Sprintf("UPDATE user SET %s WHERE id = :id",
 		dbutil.NewBuilder(user).ExcludePK().OnlyNonZero().BuildSetClauses(","))
-	user.UpdatedAt = util.EnPointer(time.Now())
 	_, err := db.DB.NamedExec(sql, user)
 	if err != nil {
 		log.F(c).Error(err)

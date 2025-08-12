@@ -3,14 +3,12 @@ package db
 import (
 	"app/conf"
 	"app/log"
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	"github.com/golang-migrate/migrate/v4"
 	mysql2 "github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/qustavo/sqlhooks/v2"
 	"strings"
 )
 
@@ -20,18 +18,18 @@ func InitializeMysql() {
 		return
 	}
 	driverName := "mysqlWithHooks"
-	sql.Register(driverName, sqlhooks.Wrap(&mysql.MySQLDriver{}, &Hooks{}))
+	registerHooks(driverName, &mysql.MySQLDriver{})
 
 	// 不存在则创建
-	dbCgf, err := mysql.ParseDSN(conf.DB.DSN)
+	parsedDSN, err := mysql.ParseDSN(conf.DB.DSN)
 	if err != nil {
 		log.Panic(err)
 	}
-	dbName := dbCgf.DBName
-	dbCgf.DBName = ""
-	initDb := getDBConnection(driverName, dbCgf.FormatDSN())
-	err = initDb.Ping()
-	if err != nil {
+	dbName := parsedDSN.DBName
+	parsedDSN.DBName = ""
+	initDb := getDBConnection(driverName, parsedDSN.FormatDSN())
+	defer initDb.Close()
+	if err = initDb.Ping(); err != nil {
 		log.Panic(err)
 	}
 	createDbSql := fmt.Sprintf("CREATE DATABASE IF NOT EXISTS `%s`;", dbName)
@@ -39,15 +37,11 @@ func InitializeMysql() {
 	if err != nil {
 		log.Fatalf("无法连接到 MySQL 服务器: %v", err)
 	}
-	defer initDb.Close()
 
 	db := getDBConnection(driverName, conf.DB.DSN)
-	err = db.Ping()
-	if err != nil {
+	if err = db.Ping(); err != nil {
 		log.Panic(err)
 	}
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(100)
 	DB = db
 }
 
@@ -80,6 +74,7 @@ func MigrateMysql() {
 		} else {
 			log.Fatalf("数据库迁移失败: %v", err)
 		}
+	} else {
+		log.Info("数据库迁移成功！")
 	}
-	log.Info("数据库迁移成功！")
 }

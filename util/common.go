@@ -1,6 +1,7 @@
 package util
 
 import (
+	"app/conf"
 	"encoding/json"
 	"fmt"
 	"go.uber.org/zap"
@@ -184,8 +185,17 @@ func RandString(n int) string {
 	return string(b)
 }
 
+func FormatTimeByLocation(t time.Time, location, layout string) string {
+	loc, err := time.LoadLocation(location)
+	if err != nil {
+		zap.S().Warnf("invalid timezone location '%s': %v", location, err)
+		return t.Format(layout)
+	}
+	return t.In(loc).Format(layout)
+}
+
 func RandTraceId() string {
-	requestId := time.Now().Format("20060102150405")
-	requestId += RandString(4)
-	return requestId
+	traceId := FormatTimeByLocation(time.Now(), conf.Timezone, "20060102150405")
+	traceId += RandString(4)
+	return traceId
 }

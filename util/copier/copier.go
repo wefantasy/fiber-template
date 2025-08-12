@@ -26,24 +26,17 @@ func TransferListType[S, T any](objects []S, targetObjects *[]T) error {
 
 // CopyProperties 将源对象的属性值复制到目标对象中
 //
-//	src any - 源对象，可以是结构体或map[string]any
-//	dest any - 目标对象，必须是指向结构体的指针
+//	src any - 源对象，可以是结构体或map[string]any或基本类型
+//	dest any - 目标对象，必须是指针
 func CopyProperties(src, dest any) error {
 	destVal := reflect.ValueOf(dest)
 	// 检查目标对象是否是指针类型
 	if destVal.Kind() != reflect.Ptr {
 		return errors.New("dest must be a pointer")
 	}
-
 	destElem := destVal.Elem()
-	// 检查目标对象是否指向结构体
-	if destElem.Kind() != reflect.Struct {
-		return errors.New("dest must be a pointer to a struct")
-	}
 
 	srcVal := reflect.ValueOf(src)
-
-	// 如果源对象是指针类型
 	if srcVal.Kind() == reflect.Ptr {
 		// 检查指针是否为nil
 		if srcVal.IsNil() {
@@ -64,7 +57,7 @@ func CopyProperties(src, dest any) error {
 		}
 		return copyFromMap(srcVal, destElem)
 	default:
-		return errors.New("src must be a struct or a map[string]any")
+		return copyValue(srcVal, destElem)
 	}
 }
 
@@ -128,12 +121,12 @@ func copyFromMap(srcMapVal, destStructElem reflect.Value) error {
 //  2. 处理指针类型解引用
 //  3. 处理各种类型间的转换(数字、字符串、布尔等)
 //  4. 处理目标值为指针类型的情况
-func copyValue(srcValInput, destVal reflect.Value) {
+func copyValue(srcValInput, destVal reflect.Value) error {
 	// 创建可修改的副本
 	srcVal := srcValInput
 
 	if !srcVal.IsValid() {
-		return
+		return errors.New("src is invalid")
 	}
 
 	// 处理接口类型解包
@@ -142,7 +135,7 @@ func copyValue(srcValInput, destVal reflect.Value) {
 			if destVal.Kind() == reflect.Ptr && destVal.CanSet() && !destVal.IsNil() {
 				destVal.Set(reflect.Zero(destVal.Type()))
 			}
-			return
+			return errors.New("src interface is nil")
 		}
 		srcVal = srcVal.Elem()
 	}
@@ -153,7 +146,7 @@ func copyValue(srcValInput, destVal reflect.Value) {
 			if destVal.Kind() == reflect.Ptr && destVal.CanSet() && !destVal.IsNil() {
 				destVal.Set(reflect.Zero(destVal.Type()))
 			}
-			return
+			return errors.New("src pointer is nil")
 		}
 		srcVal = srcVal.Elem()
 	}
@@ -356,6 +349,7 @@ func copyValue(srcValInput, destVal reflect.Value) {
 			}
 		}
 	}
+	return nil
 }
 
 // isNumeric 检查给定的reflect.Kind是否是数值类型

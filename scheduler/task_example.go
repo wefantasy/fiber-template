@@ -5,10 +5,10 @@ import (
 	"app/log"
 	"app/util"
 	"app/util/collect"
-	"context"
-	"github.com/robfig/cron/v3"
-	"sync"
+	"app/util/pool"
 	"time"
+
+	"github.com/robfig/cron/v3"
 )
 
 type ExampleTask struct {
@@ -49,21 +49,17 @@ func (o *ExampleTask) Run() {
 	startTime := time.Now()
 	log.T(rootCtx).Infof("Start Scheduling %s At %s", o.Name(), startTime.Format("2006-01-02 15:04:05"))
 
-	tasks := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	pool := util.NewPool(conf.Goroutines)
-	var wg sync.WaitGroup
-	wg.Add(len(tasks))
-
-	for _, task := range tasks {
-		pool.Submit(rootCtx, func(ctx context.Context) {
-			defer wg.Done()
-			log.T(ctx).Infof("Process Task %d", task)
-			time.Sleep(time.Second * 5)
+	data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	tasks := make([]pool.Task[int], 0, len(data))
+	for _, d := range data {
+		ctx := util.NewChildContext(rootCtx)
+		tasks = append(tasks, func() *int {
+			log.T(ctx).Infof("Process Task %d", d)
+			time.Sleep(time.Second * 1)
+			return &d
 		})
 	}
-
-	wg.Wait()
-	pool.Stop()
-
+	results := pool.ExecuteBatch(tasks, conf.Goroutines)
+	log.T(rootCtx).Infof("Result is %v", results)
 	log.T(rootCtx).Infof("End Scheduling %s At %s, Used Time: %s", o.Name(), time.Now().Format("2006-01-02 15:04:05"), time.Since(startTime))
 }

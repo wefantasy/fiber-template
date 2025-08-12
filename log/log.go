@@ -1,6 +1,7 @@
 package log
 
 import (
+	"app/code"
 	"app/conf"
 	"app/util"
 	"context"
@@ -42,8 +43,8 @@ func T(ctx context.Context) *zap.SugaredLogger {
 	if ctx == nil {
 		return zap.S()
 	}
-	if ti, ok := ctx.Value(util.TraceInfoKey).(*util.TraceInfo); ok {
-		return zap.S().With(util.TraceIdKey, ti.TraceId)
+	if ti, ok := ctx.Value(code.TraceInfoKey).(*util.TraceInfo); ok {
+		return zap.S().With(code.TraceIdKey, ti.TraceId)
 	}
 	return zap.S()
 }
